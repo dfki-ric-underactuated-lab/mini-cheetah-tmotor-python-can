@@ -16,7 +16,8 @@ Install via:
     - [From T-Motor](https://www.youtube.com/watch?v=hbqQCgebaF8)
     - [From Skyentific](https://www.youtube.com/watch?v=HzY9vzgPZkA)
 
-- Datasheet: https://store-en.tmotor.com/goods.php?id=981
+- [Datasheet](https://store-en.tmotor.com/goods.php?id=981)
+- [Ben Katz Documentation](https://docs.google.com/document/d/1dzNVzblz6mqB3eZVEMyi2MtSngALHdgpTaDJIW_BpS4/edit)
 
 # Pre-requisites:
 
