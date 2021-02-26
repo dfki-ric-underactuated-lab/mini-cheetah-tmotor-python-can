@@ -15,8 +15,8 @@ def setZeroPosition(motor, initPos):
 
 
 # Motor ID
-motor_id1 = 0x01
-motor_id2 = 0x02
+motor_id_shoulder = 0x01
+motor_id_elbow = 0x03
 
 if len(sys.argv) != 2:
     print('Provide CAN device name (can0, slcan0 etc.)')
@@ -24,49 +24,51 @@ if len(sys.argv) != 2:
 
 print("Using Socket {} for can communucation".format(sys.argv[1],))
 
-motor_1 = CanMotorController(sys.argv[1], motor_id1)
-motor_2 = CanMotorController(sys.argv[1], motor_id2)
+motor_shoulder = CanMotorController(sys.argv[1], motor_id_shoulder)
+motor_elbow = CanMotorController(sys.argv[1], motor_id_shoulder)
 
 print("Enabling Motors..")
 
-pos1, vel1, curr1 = motor_1.enable_motor()
+pos_shoulder, vel_shoulder, curr_shoulder = motor_shoulder.enable_motor()
 
-print("Motor 1 Status: Pos: {}, Vel: {}, Torque: {}".format(pos1, vel1, curr1))
+print("Shoulder Motor Status: Pos: {}, Vel: {}, Torque: {}".format(pos_shoulder, vel_shoulder,
+                                                            curr_shoulder))
 
-pos2, vel2, curr2 = motor_2.enable_motor()
+pos_elbow, vel_elbow, curr_elbow = motor_elbow.enable_motor()
 
-print("Motor 2 Status: Pos: {}, Vel: {}, Torque: {}".format(pos2, vel2, curr2))
+print("Elbow Motor Status: Pos: {}, Vel: {}, Torque: {}".format(pos_elbow, vel_elbow, curr_elbow))
 
-# print("Setting Motor 1 to Zero Position...")
+print("Setting Shoulder Motor to Zero Position...")
 
-# setZeroPosition(motor_1, pos1)
+setZeroPosition(motor_shoulder, pos_shoulder)
 
-# print("Setting Motor 2 to Zero Position...")
+print("Setting Elbow Motor to Zero Position...")
 
-# setZeroPosition(motor_2, pos2)
+setZeroPosition(motor_elbow, pos_elbow)
 
 
 # # Rotation Test. Uncommnent to rotate the motors for almost 4 revolutions.
 # angularVelDeg = 720
 # sleepTime = 2
 
-# pos1, vel1, curr1 = motor_1.send_deg_command(0, angularVelDeg, 0, 5, 0)
-# pos2, vel2, curr2 = motor_2.send_deg_command(0, angularVelDeg / 2, 0, 5, 0)
+# pos_shoulder, vel_shoulder, curr_shoulder = motor_1.send_deg_command(0, angularVelDeg, 0, 5, 0)
+# pos_elbow, vel_elbow, curr_elbow = motor_2.send_deg_command(0, angularVelDeg / 2, 0, 5, 0)
 
 # time.sleep(sleepTime)
 
-# pos1, vel1, curr1 = motor_1.send_deg_command(0, 0, 0, 5, 0)
-# pos2, vel2, curr2 = motor_2.send_deg_command(0, 0, 0, 5, 0)
+# pos_shoulder, vel_shoulder, curr_shoulder = motor_1.send_deg_command(0, 0, 0, 5, 0)
+# pos_elbow, vel_elbow, curr_elbow = motor_2.send_deg_command(0, 0, 0, 5, 0)
 
 # time.sleep(0.5)
 
 
 print("Disabling Motors...")
 
-pos1, vel1, curr1 = motor_1.disable_motor()
+pos_shoulder, vel_shoulder, curr_shoulder = motor_elbow.disable_motor()
 
-print("Motor 1 Status: Pos: {}, Vel: {}, Torque: {}".format(pos1, vel1, curr1))
+print("Shoulder Motor Status: Pos: {}, Vel: {}, Torque: {}".format(pos_shoulder, vel_shoulder,
+                                                                    curr_shoulder))
 
-pos2, vel2, curr2 = motor_2.disable_motor()
+pos_elbow, vel_elbow, curr_elbow = motor_elbow.disable_motor()
 
-print("Motor 2 Status: Pos: {}, Vel: {}, Torque: {}".format(pos2, vel2, curr2))
+print("Elbow Motor Status: Pos: {}, Vel: {}, Torque: {}".format(pos_elbow, vel_elbow, curr_elbow))
