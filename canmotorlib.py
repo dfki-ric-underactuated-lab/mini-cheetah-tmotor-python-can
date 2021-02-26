@@ -22,32 +22,25 @@ KD_MAX = 5.0
 T_MIN = -18.0
 T_MAX = 18.0
 
-maxRawPosition = 2**16 - 1                     # 16-Bits for Raw Position Values
+maxRawPosition = 2**16 - 1                      # 16-Bits for Raw Position Values
 maxRawVelocity = 2**12 - 1                      # 12-Bits for Raw Velocity Values
 maxRawTorque = 2**12 - 1                        # 12-Bits for Raw Torque Values
 maxRawKp = 2**12 - 1                            # 12-Bits for Raw Kp Values
 maxRawKd = 2**12 - 1                            # 12-Bits for Raw Kd Values
 maxRawCurrent = 2**12 - 1                       # 12-Bits for Raw Current Values
-# positionRangeRad = 191 #25.1327412287            # Position range (-4*pi, 4*pi). total 8*pi
-# velocityRangeRad = 90 #10(works)                       # Velocity Range (-30, 30) rad/s. total 60
-# torqueRange = 36                            # Torque Range (-18, 18) Nm. total 36
-# kprange = 500                               # Kp Range (0, 500) Nm/rad. total 500
-# kdrange = 5 #100                               # Kd Range (0, 100) Nm*s/rad. total 100
-# currentRange = 80                           # Current Range (-40, 40) amps. total 80
-Kt = 0.091                                  # Motor current constant (Nm/A)
-gear_ratio = 6.0                            # Gear ratio
-current_to_torque_conversion_factor = 1.0
+dt_sleep = 0.00022                              # Time before motor sends a reply
 
 
 def float_to_uint(x, x_min, x_max, numBits):
     span = x_max - x_min
     offset = x_min
-    if numBits == 16:
-        bitRange = maxRawPosition
-    elif numBits == 12:
-        bitRange = maxRawVelocity
-    else:
-        bitRange = 2**numBits - 1
+    # Attempt to speedup by using pre-computation. Not used currently.
+    # if numBits == 16:
+    #     bitRange = maxRawPosition
+    # elif numBits == 12:
+    #     bitRange = maxRawVelocity
+    # else:
+    #     bitRange = 2**numBits - 1
     return int(((x - offset) * (2**numBits - 1)) / span)
 
 
@@ -136,7 +129,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC')
-            time.sleep(0.00022)
+            time.sleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -153,7 +146,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFD')
-            time.sleep(0.00022)
+            time.sleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -170,7 +163,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE')
-            time.sleep(0.00022)
+            time.sleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -240,11 +233,6 @@ class CanMotorController():
 
         returns: position (radians), velocity (rad/s), current (amps)
         '''
-        # physicalPositionRad = ((positionRawValue * positionRangeRad) / maxRawPosition) \
-        #                     - (positionRangeRad / 2)
-        # physicalVelocityRad = ((velocityRawValue * velocityRangeRad) / maxRawVelocity) \
-        #                     - (velocityRangeRad / 2)
-        # physicalCurrent = ((currentRawValue * currentRange) / maxRawCurrent) - (currentRange / 2)
 
         physicalPositionRad = uint_to_float(positionRawValue, P_MIN, P_MAX, 16)
         physicalVelocityRad = uint_to_float(velocityRawValue, V_MIN, V_MAX, 12)
@@ -351,7 +339,7 @@ class CanMotorController():
 
         try:
             self._send_can_frame(cmd_bytes)
-            time.sleep(0.00022)
+            time.sleep(dt_sleep)
             # print("Succesfully Sent Raw Commands.")
             can_id, can_dlc, data = self._recv_can_frame()
             # print('Received: can_id=%x, can_dlc=%x, data=%s' % (can_id, can_dlc, data))
