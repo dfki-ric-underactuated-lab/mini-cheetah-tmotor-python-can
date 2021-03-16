@@ -56,6 +56,12 @@ def uint_to_float(x_int, x_min, x_max, numBits):
     return ((x_int * span) / (bitRange)) + offset
 
 
+def waitOhneSleep(dt):
+    startTime = time.time()
+    while time.time() - startTime < dt:
+        pass
+
+
 class CanMotorController():
     """
     Class for creating a Mini-Cheetah Motor Controller over CAN. Uses SocketCAN driver for
@@ -129,7 +135,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC')
-            time.sleep(dt_sleep)
+            waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -146,7 +152,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFD')
-            time.sleep(dt_sleep)
+            waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -163,7 +169,7 @@ class CanMotorController():
         """
         try:
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE')
-            time.sleep(dt_sleep)
+            waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
@@ -339,7 +345,7 @@ class CanMotorController():
 
         try:
             self._send_can_frame(cmd_bytes)
-            time.sleep(dt_sleep)
+            waitOhneSleep(dt_sleep)
             # print("Succesfully Sent Raw Commands.")
             can_id, can_dlc, data = self._recv_can_frame()
             # print('Received: can_id=%x, can_dlc=%x, data=%s' % (can_id, can_dlc, data))
