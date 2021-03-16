@@ -25,7 +25,7 @@ if len(sys.argv) != 2:
 print("Using Socket {} for can communucation".format(sys.argv[1],))
 
 motor_shoulder = CanMotorController(sys.argv[1], motor_id_shoulder)
-motor_elbow = CanMotorController(sys.argv[1], motor_id_shoulder)
+motor_elbow = CanMotorController(sys.argv[1], motor_id_elbow)
 
 print("Enabling Motors..")
 
