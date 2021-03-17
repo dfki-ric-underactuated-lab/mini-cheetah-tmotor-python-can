@@ -4,11 +4,11 @@
 
 * bitstring
 * numpy
-* socket
+* sockets
 
 Install via:
 
-`pip3 install bitstring socket numpy pandas`
+`pip3 install bitstring sockets numpy pandas`
 
 # Documentation
 
