@@ -8,7 +8,8 @@ from bitstring import BitArray
 
 
 # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
-can_frame_fmt = "=IB3x8s"
+can_frame_fmt_send = "=IB3x8s"
+can_frame_fmt_recv = "=IB3x6s"
 
 # Precompute Constants for conversion
 P_MIN = -95.5
@@ -74,7 +75,7 @@ class CanMotorController():
     can_socket_declared = False
     motor_socket = None
 
-    def __init__(self, can_socket='can0', motor_id=0x01, socket_timeout=0.5):
+    def __init__(self, can_socket='can0', motor_id=0x01, socket_timeout=0.003):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
         Sets up the socket communication for rest of the functions.
@@ -96,6 +97,15 @@ class CanMotorController():
         elif CanMotorController.can_socket_declared:
             print("CAN Socket Already Available. Using: ", CanMotorController.motor_socket)
 
+        # Initialize the command BitArrays for performance optimization
+        self._p_des_BitArray = BitArray(uint=float_to_uint(0, P_MIN, P_MAX, 16), length=16)
+        self._v_des_BitArray = BitArray(uint=float_to_uint(0, V_MIN, V_MAX, 12), length=12)
+        self._kp_BitArray = BitArray(uint=0, length=12)
+        self._kd_BitArray = BitArray(uint=0, length=12)
+        self._tau_BitArray = BitArray(uint=0, length=12)
+        self._cmd_bytes = BitArray(uint=0, length=64)
+        self._recv_bytes = BitArray(uint=0, length=48)
+
     def _send_can_frame(self, data):
         """
         Send raw CAN data frame (in bytes) to the motor.
@@ -109,7 +119,7 @@ class CanMotorController():
         # print("Data Before ljust: {}".format(data))
         # data = data.ljust(8, b'\x00')
         # print("Data After ljust: {}".format(data))
-        can_msg = struct.pack(can_frame_fmt, self.motor_id, can_dlc, data)
+        can_msg = struct.pack(can_frame_fmt_send, self.motor_id, can_dlc, data)
         try:
             CanMotorController.motor_socket.send(can_msg)
         except Exception as e:
@@ -122,8 +132,8 @@ class CanMotorController():
         """
         try:
             # The motor sends back only 6 bytes.
-            frame, addr = CanMotorController.motor_socket.recvfrom(16)
-            can_id, can_dlc, data = struct.unpack(can_frame_fmt, frame)
+            frame, addr = CanMotorController.motor_socket.recvfrom(14)
+            can_id, can_dlc, data = struct.unpack(can_frame_fmt_recv, frame)
             return can_id, can_dlc, data[:can_dlc]
         except Exception as e:
             print("Unable to Receive CAN Franme.")
@@ -201,7 +211,12 @@ class CanMotorController():
 
         # Convert the message from motor to a bit string as this is easier to deal with than hex
         # while seperating individual values.
-        dataBitArray = BitArray(data_frame).bin
+        # print("Data Frame: {}".format(data_frame))
+        # print("Data Frame Type: {}".format(type(data_frame)))
+        # print("Length of Bit Array. {}".format(BitArray(data_frame).len))
+        # dataBitArray = BitArray(data_frame).bin
+        self._recv_bytes.bytes = data_frame
+        dataBitArray = self._recv_bytes.bin
 
         # Separate motor satus values from the bit string.
         # Motor ID not considered necessary at the moment.
@@ -221,8 +236,6 @@ class CanMotorController():
 
     def convert_raw_to_physical_rad(self, positionRawValue, velocityRawValue, currentRawValue):
         '''
-        TODO: This function needs more testing. Could potentially give wrong values.
-
         Function to convert the raw values from the motor to physical values:
 
         /// CAN Reply Packet Structure ///
@@ -248,8 +261,6 @@ class CanMotorController():
 
     def convert_raw_to_physical_deg(self, positionRawValue, velocityRawValue, currentRawValue):
         '''
-        TODO: This function needs more testing. Could potentially give wrong values.
-
         Function to convert the raw values from the motor to physical values:
 
         /// CAN Reply Packet Structure ///
@@ -328,23 +339,33 @@ class CanMotorController():
 
         Sends data over CAN, reads response, and returns the motor status data (in bytes).
         """
-        # try:
-        p_des_BitArray = BitArray(uint=p_des, length=16).bin
-        v_des_BitArray = BitArray(uint=v_des, length=12).bin
-        kp_BitArray = BitArray(uint=kp, length=12).bin
-        kd_BitArray = BitArray(uint=kd, length=12).bin
-        tau_BitArray = BitArray(uint=tau_ff, length=12).bin
-        # except Exception as e:
-        #     print(e)
-        #     print("Attempted to Send the following Command: ({}, {}, {}, {}, {})".format(p_des,
-        #                                                                    v_des, kp, kd, tau_ff))
 
-        cmd_BitArray = p_des_BitArray + v_des_BitArray + kp_BitArray + kd_BitArray + tau_BitArray
+        # Old Method: Does initialization at each command. Not efficient.
 
-        cmd_bytes = BitArray(bin=cmd_BitArray).tobytes()
+        # p_des_BitArray = BitArray(uint=p_des, length=16).bin
+        # v_des_BitArray = BitArray(uint=v_des, length=12).bin
+        # kp_BitArray = BitArray(uint=kp, length=12).bin
+        # kd_BitArray = BitArray(uint=kd, length=12).bin
+        # tau_BitArray = BitArray(uint=tau_ff, length=12).bin
+
+        # cmd_BitArray = p_des_BitArray + v_des_BitArray + kp_BitArray + kd_BitArray + tau_BitArray
+        # cmd_bytes = BitArray(bin=cmd_BitArray).tobytes()
+
+        # New Method with pre-initialization for optimization
+
+        self._p_des_BitArray.int = p_des
+        self._v_des_BitArray.int = v_des
+        self._kp_BitArray.int = kp
+        self._kd_BitArray.int = kd
+        self._tau_BitArray.int = tau_ff
+        cmd_BitArray = self._p_des_BitArray.bin + self._v_des_BitArray.bin + self._kp_BitArray.bin \
+                        + self._kd_BitArray.bin + self._tau_BitArray.bin
+
+        self._cmd_bytes.bin = cmd_BitArray
 
         try:
-            self._send_can_frame(cmd_bytes)
+            # self._send_can_frame(cmd_bytes)
+            self._send_can_frame(self._cmd_bytes.tobytes())
             waitOhneSleep(dt_sleep)
             # print("Succesfully Sent Raw Commands.")
             can_id, can_dlc, data = self._recv_can_frame()
