@@ -46,22 +46,6 @@ print("Setting Elbow Motor to Zero Position...")
 
 setZeroPosition(motor_elbow, pos_elbow)
 
-
-# # Rotation Test. Uncommnent to rotate the motors for almost 4 revolutions.
-# angularVelDeg = 720
-# sleepTime = 2
-
-# pos_shoulder, vel_shoulder, curr_shoulder = motor_1.send_deg_command(0, angularVelDeg, 0, 5, 0)
-# pos_elbow, vel_elbow, curr_elbow = motor_2.send_deg_command(0, angularVelDeg / 2, 0, 5, 0)
-
-# time.sleep(sleepTime)
-
-# pos_shoulder, vel_shoulder, curr_shoulder = motor_1.send_deg_command(0, 0, 0, 5, 0)
-# pos_elbow, vel_elbow, curr_elbow = motor_2.send_deg_command(0, 0, 0, 5, 0)
-
-# time.sleep(0.5)
-
-
 print("Disabling Motors...")
 
 pos_shoulder, vel_shoulder, curr_shoulder = motor_elbow.disable_motor()
