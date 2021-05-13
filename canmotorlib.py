@@ -36,12 +36,12 @@ def float_to_uint(x, x_min, x_max, numBits):
     span = x_max - x_min
     offset = x_min
     # Attempt to speedup by using pre-computation. Not used currently.
-    # if numBits == 16:
-    #     bitRange = maxRawPosition
-    # elif numBits == 12:
-    #     bitRange = maxRawVelocity
-    # else:
-    #     bitRange = 2**numBits - 1
+    if numBits == 16:
+        bitRange = maxRawPosition
+    elif numBits == 12:
+        bitRange = maxRawVelocity
+    else:
+        bitRange = 2**numBits - 1
     return int(((x - offset) * (2**numBits - 1)) / span)
 
 
@@ -75,7 +75,7 @@ class CanMotorController():
     can_socket_declared = False
     motor_socket = None
 
-    def __init__(self, can_socket='can0', motor_id=0x01, socket_timeout=0.003):
+    def __init__(self, can_socket='can0', motor_id=0x01, socket_timeout=0.05):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
         Sets up the socket communication for rest of the functions.
@@ -128,7 +128,7 @@ class CanMotorController():
 
     def _recv_can_frame(self):
         """
-        Reeieve a CAN frame and unpack it. Returns can_id, can_dlc (data length), data (in bytes)
+        Recieve a CAN frame and unpack it. Returns can_id, can_dlc (data length), data (in bytes)
         """
         try:
             # The motor sends back only 6 bytes.
@@ -353,11 +353,11 @@ class CanMotorController():
 
         # New Method with pre-initialization for optimization
 
-        self._p_des_BitArray.int = p_des
-        self._v_des_BitArray.int = v_des
-        self._kp_BitArray.int = kp
-        self._kd_BitArray.int = kd
-        self._tau_BitArray.int = tau_ff
+        self._p_des_BitArray.uint = p_des
+        self._v_des_BitArray.uint = v_des
+        self._kp_BitArray.uint = kp
+        self._kd_BitArray.uint = kd
+        self._tau_BitArray.uint = tau_ff
         cmd_BitArray = self._p_des_BitArray.bin + self._v_des_BitArray.bin + self._kp_BitArray.bin \
                         + self._kd_BitArray.bin + self._tau_BitArray.bin
 
