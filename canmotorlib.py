@@ -8,14 +8,16 @@ from bitstring import BitArray
 
 
 # CAN frame packing/unpacking (see `struct can_frame` in <linux/can.h>)
+# 8 bytes of data is sent to the motor
 can_frame_fmt_send = "=IB3x8s"
+# 6 bytes are received from the motor
 can_frame_fmt_recv = "=IB3x6s"
 
 # Precompute Constants for conversion
 P_MIN = -95.5
 P_MAX = 95.5
 V_MIN = -45.0
-V_MAX = 45.0        # should be 38.22 as max speed at rated torque according to datasheet is 365 rpm
+V_MAX = 45.0
 KP_MIN = 0.0
 KP_MAX = 500.0
 KD_MIN = 0.0
@@ -29,7 +31,7 @@ maxRawTorque = 2**12 - 1                        # 12-Bits for Raw Torque Values
 maxRawKp = 2**12 - 1                            # 12-Bits for Raw Kp Values
 maxRawKd = 2**12 - 1                            # 12-Bits for Raw Kd Values
 maxRawCurrent = 2**12 - 1                       # 12-Bits for Raw Current Values
-dt_sleep = 0.00022                              # Time before motor sends a reply
+dt_sleep = 0.0001                               # Time before motor sends a reply
 
 
 def float_to_uint(x, x_min, x_max, numBits):
@@ -42,7 +44,7 @@ def float_to_uint(x, x_min, x_max, numBits):
         bitRange = maxRawVelocity
     else:
         bitRange = 2**numBits - 1
-    return int(((x - offset) * (2**numBits - 1)) / span)
+    return int(((x - offset) * (bitRange)) / span)
 
 
 def uint_to_float(x_int, x_min, x_max, numBits):
@@ -111,14 +113,6 @@ class CanMotorController():
         Send raw CAN data frame (in bytes) to the motor.
         """
         can_dlc = len(data)
-        """
-        This seems to not be of any use. The data is always supposed to be of length 8.
-        ljust is not necessary along with the extra padding of bytes which was taken from example.
-        """
-        # print("Data Length: {}".format(can_dlc))
-        # print("Data Before ljust: {}".format(data))
-        # data = data.ljust(8, b'\x00')
-        # print("Data After ljust: {}".format(data))
         can_msg = struct.pack(can_frame_fmt_send, self.motor_id, can_dlc, data)
         try:
             CanMotorController.motor_socket.send(can_msg)
@@ -211,10 +205,6 @@ class CanMotorController():
 
         # Convert the message from motor to a bit string as this is easier to deal with than hex
         # while seperating individual values.
-        # print("Data Frame: {}".format(data_frame))
-        # print("Data Frame Type: {}".format(type(data_frame)))
-        # print("Length of Bit Array. {}".format(BitArray(data_frame).len))
-        # dataBitArray = BitArray(data_frame).bin
         self._recv_bytes.bytes = data_frame
         dataBitArray = self._recv_bytes.bin
 
@@ -339,20 +329,6 @@ class CanMotorController():
 
         Sends data over CAN, reads response, and returns the motor status data (in bytes).
         """
-
-        # Old Method: Does initialization at each command. Not efficient.
-
-        # p_des_BitArray = BitArray(uint=p_des, length=16).bin
-        # v_des_BitArray = BitArray(uint=v_des, length=12).bin
-        # kp_BitArray = BitArray(uint=kp, length=12).bin
-        # kd_BitArray = BitArray(uint=kd, length=12).bin
-        # tau_BitArray = BitArray(uint=tau_ff, length=12).bin
-
-        # cmd_BitArray = p_des_BitArray + v_des_BitArray + kp_BitArray + kd_BitArray + tau_BitArray
-        # cmd_bytes = BitArray(bin=cmd_BitArray).tobytes()
-
-        # New Method with pre-initialization for optimization
-
         self._p_des_BitArray.uint = p_des
         self._v_des_BitArray.uint = v_des
         self._kp_BitArray.uint = kp
@@ -364,12 +340,9 @@ class CanMotorController():
         self._cmd_bytes.bin = cmd_BitArray
 
         try:
-            # self._send_can_frame(cmd_bytes)
             self._send_can_frame(self._cmd_bytes.tobytes())
             waitOhneSleep(dt_sleep)
-            # print("Succesfully Sent Raw Commands.")
             can_id, can_dlc, data = self._recv_can_frame()
-            # print('Received: can_id=%x, can_dlc=%x, data=%s' % (can_id, can_dlc, data))
             return data
         except Exception as e:
             print('Error Sending Raw Commands!')
@@ -389,8 +362,6 @@ class CanMotorController():
         rawMotorData = self.decode_motor_status(motorStatusData)
         pos, vel, curr = self.convert_raw_to_physical_deg(rawMotorData[0], rawMotorData[1],
                                                             rawMotorData[2])
-        # print("Position(deg): {}, Velocity(deg/s): {}, Current(amps): {}".format(pos, vel,
-        #                                                                            curr))
         return pos, vel, curr
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
@@ -407,6 +378,26 @@ class CanMotorController():
         rawMotorData = self.decode_motor_status(motorStatusData)
         pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
                                                             rawMotorData[2])
-        # print("Position(deg): {}, Velocity(deg/s): {}, Current(amps): {}".format(pos, vel,
-        #                                                                            curr))
         return pos, vel, curr
+
+    def change_motor_constants(self, P_MIN_NEW, P_MAX_NEW, V_MIN_NEW, V_MAX_NEW, KP_MIN_NEW,
+                            KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW, T_MIN_NEW, T_MAX_NEW):
+        """
+        Function to change the global motor constants. Default values are for AK80-6 motor from
+        CubeMars. For a differnt motor, the min/max values can be changed here for correct
+        conversion.
+        change_motor_params(P_MIN_NEW (radians), P_MAX_NEW (radians), V_MIN_NEW (rad/s),
+                            V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW,
+                            T_MIN_NEW (Nm), T_MAX_NEW (Nm))
+        """
+        global P_MIN, P_MAX, V_MIN, V_MAX, KP_MIN, KP_MAX, KD_MIN, KD_MAX, T_MIN, T_MAX
+        P_MIN = P_MIN_NEW
+        P_MAX = P_MAX_NEW
+        V_MIN = V_MIN_NEW
+        V_MAX = V_MAX_NEW
+        KP_MIN = KP_MIN_NEW
+        KP_MAX = KP_MAX_NEW
+        KD_MIN = KD_MIN_NEW
+        KD_MAX = KD_MAX_NEW
+        T_MIN = T_MIN_NEW
+        T_MAX = T_MAX_NEW
