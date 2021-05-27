@@ -371,6 +371,11 @@ class CanMotorController():
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         """
+        # Change the motor axis to outward instead of inward.
+        p_des_rad = -p_des_rad
+        v_des_rad = -v_des_rad
+        tau_ff = -tau_ff
+
         rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
                                                                 v_des_rad, kp, kd, tau_ff)
 
@@ -378,6 +383,12 @@ class CanMotorController():
         rawMotorData = self.decode_motor_status(motorStatusData)
         pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
                                                             rawMotorData[2])
+
+        # Invert the returned data also to change the motor axis from inward to outward
+        pos = -pos
+        vel = -vel
+        curr = -curr
+
         return pos, vel, curr
 
     def change_motor_constants(self, P_MIN_NEW, P_MAX_NEW, V_MIN_NEW, V_MAX_NEW, KP_MIN_NEW,
