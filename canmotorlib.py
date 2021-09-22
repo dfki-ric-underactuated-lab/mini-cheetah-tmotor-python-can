@@ -14,16 +14,45 @@ can_frame_fmt_send = "=IB3x8s"
 can_frame_fmt_recv = "=IB3x6s"
 
 # Precompute Constants for conversion
-P_MIN = -95.5
-P_MAX = 95.5
-V_MIN = -45.0
-V_MAX = 45.0
+# Old Constants. Working with motor firmware version 1.0
+# P_MIN = -95.5
+# P_MAX = 95.5
+# V_MIN = -45.0
+# V_MAX = 45.0
+# KP_MIN = 0.0
+# KP_MAX = 500.0
+# KD_MIN = 0.0
+# KD_MAX = 5.0
+# T_MIN = -18.0
+# T_MAX = 18.0
+# AXIS_DIRECTION = -1
+
+# Working parameters for AK80-6 V2.0 firmware
+P_MIN = -12.5
+P_MAX = 12.5
+V_MIN = -38.2
+V_MAX = 38.2
 KP_MIN = 0.0
 KP_MAX = 500.0
 KD_MIN = 0.0
 KD_MAX = 5.0
-T_MIN = -18.0
-T_MAX = 18.0
+T_MIN = -12.0
+T_MAX = 12.0
+AXIS_DIRECTION = -1
+
+# Working parameters for AK80-9 V2.0 firmware
+# P_MIN = -12.5
+# P_MAX = 12.5
+# V_MIN = -25.64
+# V_MAX = 25.64
+# KP_MIN = 0.0
+# KP_MAX = 500.0
+# KD_MIN = 0.0
+# KD_MAX = 5.0
+# T_MIN = -18.0
+# T_MAX = 18.0
+# AXIS_DIRECTION = -1
+
 
 maxRawPosition = 2**16 - 1                      # 16-Bits for Raw Position Values
 maxRawVelocity = 2**12 - 1                      # 12-Bits for Raw Velocity Values
@@ -249,64 +278,64 @@ class CanMotorController():
 
         return physicalPositionRad, physicalVelocityRad, physicalCurrent
 
-    def convert_raw_to_physical_deg(self, positionRawValue, velocityRawValue, currentRawValue):
-        '''
-        Function to convert the raw values from the motor to physical values:
+    # def convert_raw_to_physical_deg(self, positionRawValue, velocityRawValue, currentRawValue):
+    #     '''
+    #     Function to convert the raw values from the motor to physical values:
 
-        /// CAN Reply Packet Structure ///
-        /// 16 bit position, between -4*pi and 4*pi
-        /// 12 bit velocity, between -30 and + 30 rad/s
-        /// 12 bit current, between -40 and 40;
-        /// CAN Packet is 5 8-bit words
-        /// Formatted as follows.  For each quantity, bit 0 is LSB
-        /// 0: [position[15-8]]
-        /// 1: [position[7-0]]
-        /// 2: [velocity[11-4]]
-        /// 3: [velocity[3-0], current[11-8]]
-        /// 4: [current[7-0]]
+    #     /// CAN Reply Packet Structure ///
+    #     /// 16 bit position, between -4*pi and 4*pi
+    #     /// 12 bit velocity, between -30 and + 30 rad/s
+    #     /// 12 bit current, between -40 and 40;
+    #     /// CAN Packet is 5 8-bit words
+    #     /// Formatted as follows.  For each quantity, bit 0 is LSB
+    #     /// 0: [position[15-8]]
+    #     /// 1: [position[7-0]]
+    #     /// 2: [velocity[11-4]]
+    #     /// 3: [velocity[3-0], current[11-8]]
+    #     /// 4: [current[7-0]]
 
-        returns: position (degrees), velocity (deg/s), current (amps)
-        '''
+    #     returns: position (degrees), velocity (deg/s), current (amps)
+    #     '''
 
-        physicalPositionRad, physicalVelocityRad, physicalCurrent = \
-            self.convert_raw_to_physical_rad(positionRawValue, velocityRawValue, currentRawValue)
+    #     physicalPositionRad, physicalVelocityRad, physicalCurrent = \
+    #         self.convert_raw_to_physical_rad(positionRawValue, velocityRawValue, currentRawValue)
 
-        physicalPositionDeg = math.degrees(physicalPositionRad)
-        physicalVelocityDeg = math.degrees(physicalVelocityRad)
+    #     physicalPositionDeg = math.degrees(physicalPositionRad)
+    #     physicalVelocityDeg = math.degrees(physicalVelocityRad)
 
-        return physicalPositionDeg, physicalVelocityDeg, physicalCurrent
+    #     return physicalPositionDeg, physicalVelocityDeg, physicalCurrent
 
-    def convert_physical_deg_to_raw(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
-        '''
-        /// CAN Command Packet Structure ///
-        /// 16 bit position command, between -4*pi and 4*pi
-        /// 12 bit velocity command, between -30 and + 30 rad/s
-        /// 12 bit kp, between 0 and 500 N-m/rad
-        /// 12 bit kd, between 0 and 100 N-m*s/rad
-        /// 12 bit feed forward torque, between -18 and 18 N-m
-        /// CAN Packet is 8 8-bit words
-        /// Formatted as follows.  For each quantity, bit 0 is LSB
-        /// 0: [position[15-8]]
-        /// 1: [position[7-0]]
-        /// 2: [velocity[11-4]]
-        /// 3: [velocity[3-0], kp[11-8]]
-        /// 4: [kp[7-0]]
-        /// 5: [kd[11-4]]
-        /// 6: [kd[3-0], torque[11-8]]
-        /// 7: [torque[7-0]]
-        '''
-        position = math.radians(p_des_deg)
-        velocity = math.radians(v_des_deg)
+    # def convert_physical_deg_to_raw(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
+    #     '''
+    #     /// CAN Command Packet Structure ///
+    #     /// 16 bit position command, between -4*pi and 4*pi
+    #     /// 12 bit velocity command, between -30 and + 30 rad/s
+    #     /// 12 bit kp, between 0 and 500 N-m/rad
+    #     /// 12 bit kd, between 0 and 100 N-m*s/rad
+    #     /// 12 bit feed forward torque, between -18 and 18 N-m
+    #     /// CAN Packet is 8 8-bit words
+    #     /// Formatted as follows.  For each quantity, bit 0 is LSB
+    #     /// 0: [position[15-8]]
+    #     /// 1: [position[7-0]]
+    #     /// 2: [velocity[11-4]]
+    #     /// 3: [velocity[3-0], kp[11-8]]
+    #     /// 4: [kp[7-0]]
+    #     /// 5: [kd[11-4]]
+    #     /// 6: [kd[3-0], torque[11-8]]
+    #     /// 7: [torque[7-0]]
+    #     '''
+    #     position = math.radians(p_des_deg)
+    #     velocity = math.radians(v_des_deg)
 
-        rawPosition = float_to_uint(position, P_MIN, P_MAX, 16)
-        rawVelocity = float_to_uint(velocity, V_MIN, V_MAX, 12)
-        rawTorque = float_to_uint(tau_ff, T_MIN, T_MAX, 12)
+    #     rawPosition = float_to_uint(position, P_MIN, P_MAX, 16)
+    #     rawVelocity = float_to_uint(velocity, V_MIN, V_MAX, 12)
+    #     rawTorque = float_to_uint(tau_ff, T_MIN, T_MAX, 12)
 
-        rawKp = ((maxRawKp * kp) / KP_MAX)
+    #     rawKp = ((maxRawKp * kp) / KP_MAX)
 
-        rawKd = ((maxRawKd * kd) / KD_MAX)
+    #     rawKd = ((maxRawKd * kd) / KD_MAX)
 
-        return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
+    #     return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
 
     def convert_physical_rad_to_raw(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
 
@@ -355,13 +384,18 @@ class CanMotorController():
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
         """
-        rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_deg_to_raw(p_des_deg,
-                                                                v_des_deg, kp, kd, tau_ff)
+        p_des_rad = math.radians(p_des_deg)
+        v_des_rad = math.radians(v_des_deg)
+        # rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_deg_to_raw(p_des_deg,
+        #                                                         v_des_deg, kp, kd, tau_ff)
 
-        motorStatusData = self._send_raw_command(rawPos, rawVel, rawKp, rawKd, rawTauff)
-        rawMotorData = self.decode_motor_status(motorStatusData)
-        pos, vel, curr = self.convert_raw_to_physical_deg(rawMotorData[0], rawMotorData[1],
-                                                            rawMotorData[2])
+        # motorStatusData = self._send_raw_command(rawPos, rawVel, rawKp, rawKd, rawTauff)
+        # rawMotorData = self.decode_motor_status(motorStatusData)
+        # pos, vel, curr = self.convert_raw_to_physical_deg(rawMotorData[0], rawMotorData[1],
+        #                                                     rawMotorData[2])
+        pos_rad, vel_rad, curr = self.send_rad_command(p_des_rad, v_des_rad, kp, kd, tau_ff)
+        pos = math.degrees(pos_rad)
+        vel = math.degrees(vel_rad)
         return pos, vel, curr
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
@@ -372,9 +406,9 @@ class CanMotorController():
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         """
         # Change the motor axis to outward instead of inward.
-        p_des_rad = -p_des_rad
-        v_des_rad = -v_des_rad
-        tau_ff = -tau_ff
+        p_des_rad = p_des_rad * AXIS_DIRECTION
+        v_des_rad = v_des_rad * AXIS_DIRECTION
+        tau_ff = tau_ff * AXIS_DIRECTION
 
         rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
                                                                 v_des_rad, kp, kd, tau_ff)
@@ -385,9 +419,9 @@ class CanMotorController():
                                                             rawMotorData[2])
 
         # Invert the returned data also to change the motor axis from inward to outward
-        pos = -pos
-        vel = -vel
-        curr = -curr
+        pos = pos * AXIS_DIRECTION
+        vel = vel * AXIS_DIRECTION
+        curr = curr * AXIS_DIRECTION
 
         return pos, vel, curr
 
