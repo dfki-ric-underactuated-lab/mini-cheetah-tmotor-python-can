@@ -13,45 +13,58 @@ can_frame_fmt_send = "=IB3x8s"
 # 6 bytes are received from the motor
 can_frame_fmt_recv = "=IB3x6s"
 
+# List of Motors Supported by this Driver
+legitimate_motors = [
+                    "AK80_6_V1",
+                    "AK80_6_V2",
+                    "AK80_9_V2"
+                    ]
+
 # Precompute Constants for conversion
 # Old Constants. Working with motor firmware version 1.0
-# P_MIN = -95.5
-# P_MAX = 95.5
-# V_MIN = -45.0
-# V_MAX = 45.0
-# KP_MIN = 0.0
-# KP_MAX = 500.0
-# KD_MIN = 0.0
-# KD_MAX = 5.0
-# T_MIN = -18.0
-# T_MAX = 18.0
-# AXIS_DIRECTION = -1
+AK80_6_V1_PARAMS = {
+                "P_MIN" : -95.5,
+                "P_MAX" : 95.5,
+                "V_MIN" : -45.0,
+                "V_MAX" : 45.0,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -18.0,
+                "T_MAX" : 18.0,
+                "AXIS_DIRECTION" : -1
+                }
 
 # Working parameters for AK80-6 V2.0 firmware
-P_MIN = -12.5
-P_MAX = 12.5
-V_MIN = -38.2
-V_MAX = 38.2
-KP_MIN = 0.0
-KP_MAX = 500.0
-KD_MIN = 0.0
-KD_MAX = 5.0
-T_MIN = -12.0
-T_MAX = 12.0
-AXIS_DIRECTION = -1
+AK80_6_V2_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -38.2,
+                "V_MAX" : 38.2,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500.0,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -12.0,
+                "T_MAX" : 12.0,
+                "AXIS_DIRECTION" : -1
+                }
 
 # Working parameters for AK80-9 V2.0 firmware
-# P_MIN = -12.5
-# P_MAX = 12.5
-# V_MIN = -25.64
-# V_MAX = 25.64
-# KP_MIN = 0.0
-# KP_MAX = 500.0
-# KD_MIN = 0.0
-# KD_MAX = 5.0
-# T_MIN = -18.0
-# T_MAX = 18.0
-# AXIS_DIRECTION = -1
+AK80_9_V2_PARAMS = {
+                    "P_MIN" : -12.5,
+                    "P_MAX" : 12.5,
+                    "V_MIN" : -25.64,
+                    "V_MAX" : 25.64,
+                    "KP_MIN" : 0.0,
+                    "KP_MAX" : 500.0,
+                    "KD_MIN" : 0.0,
+                    "KD_MAX" : 5.0,
+                    "T_MIN" : -18.0,
+                    "T_MAX" : 18.0,
+                    "AXIS_DIRECTION" : -1
+                    }
 
 
 maxRawPosition = 2**16 - 1                      # 16-Bits for Raw Position Values
@@ -106,11 +119,21 @@ class CanMotorController():
     can_socket_declared = False
     motor_socket = None
 
-    def __init__(self, can_socket='can0', motor_id=0x01, socket_timeout=0.05):
+    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V2',
+                socket_timeout=0.05):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
         Sets up the socket communication for rest of the functions.
         """
+        print('Using Motor Type: {}'.format(motor_type))
+        assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
+        if motor_type == 'AK80_6_v1':
+            self.motorParams = AK80_6_V1_PARAMS
+        elif motor_type == 'AK80_6_v2':
+            self.motorParams = AK80_6_V2_PARAMS
+        elif motor_type == 'AK80_9_v2':
+            self.motorParams = AK80_9_V2_PARAMS
+
         can_socket = (can_socket, )
         self.motor_id = motor_id
         # create a raw socket and bind it to the given CAN interface
@@ -129,8 +152,10 @@ class CanMotorController():
             print("CAN Socket Already Available. Using: ", CanMotorController.motor_socket)
 
         # Initialize the command BitArrays for performance optimization
-        self._p_des_BitArray = BitArray(uint=float_to_uint(0, P_MIN, P_MAX, 16), length=16)
-        self._v_des_BitArray = BitArray(uint=float_to_uint(0, V_MIN, V_MAX, 12), length=12)
+        self._p_des_BitArray = BitArray(uint=float_to_uint(0, self.motorParams['P_MIN'],
+                                                        self.motorParams['P_MAX'], 16), length=16)
+        self._v_des_BitArray = BitArray(uint=float_to_uint(0, self.motorParams['V_MIN'],
+                                                        self.motorParams['V_MAX'], 12), length=12)
         self._kp_BitArray = BitArray(uint=0, length=12)
         self._kd_BitArray = BitArray(uint=0, length=12)
         self._tau_BitArray = BitArray(uint=0, length=12)
@@ -272,80 +297,26 @@ class CanMotorController():
         returns: position (radians), velocity (rad/s), current (amps)
         '''
 
-        physicalPositionRad = uint_to_float(positionRawValue, P_MIN, P_MAX, 16)
-        physicalVelocityRad = uint_to_float(velocityRawValue, V_MIN, V_MAX, 12)
-        physicalCurrent = uint_to_float(currentRawValue, T_MIN, T_MAX, 12)
+        physicalPositionRad = uint_to_float(positionRawValue, self.motorParams['P_MIN'],
+                                            self.motorParams['P_MAX'], 16)
+        physicalVelocityRad = uint_to_float(velocityRawValue, self.motorParams['V_MIN'],
+                                            self.motorParams['V_MAX'], 12)
+        physicalCurrent = uint_to_float(currentRawValue, self.motorParams['T_MIN'],
+                                        self.motorParams['T_MAX'], 12)
 
         return physicalPositionRad, physicalVelocityRad, physicalCurrent
 
-    # def convert_raw_to_physical_deg(self, positionRawValue, velocityRawValue, currentRawValue):
-    #     '''
-    #     Function to convert the raw values from the motor to physical values:
-
-    #     /// CAN Reply Packet Structure ///
-    #     /// 16 bit position, between -4*pi and 4*pi
-    #     /// 12 bit velocity, between -30 and + 30 rad/s
-    #     /// 12 bit current, between -40 and 40;
-    #     /// CAN Packet is 5 8-bit words
-    #     /// Formatted as follows.  For each quantity, bit 0 is LSB
-    #     /// 0: [position[15-8]]
-    #     /// 1: [position[7-0]]
-    #     /// 2: [velocity[11-4]]
-    #     /// 3: [velocity[3-0], current[11-8]]
-    #     /// 4: [current[7-0]]
-
-    #     returns: position (degrees), velocity (deg/s), current (amps)
-    #     '''
-
-    #     physicalPositionRad, physicalVelocityRad, physicalCurrent = \
-    #         self.convert_raw_to_physical_rad(positionRawValue, velocityRawValue, currentRawValue)
-
-    #     physicalPositionDeg = math.degrees(physicalPositionRad)
-    #     physicalVelocityDeg = math.degrees(physicalVelocityRad)
-
-    #     return physicalPositionDeg, physicalVelocityDeg, physicalCurrent
-
-    # def convert_physical_deg_to_raw(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
-    #     '''
-    #     /// CAN Command Packet Structure ///
-    #     /// 16 bit position command, between -4*pi and 4*pi
-    #     /// 12 bit velocity command, between -30 and + 30 rad/s
-    #     /// 12 bit kp, between 0 and 500 N-m/rad
-    #     /// 12 bit kd, between 0 and 100 N-m*s/rad
-    #     /// 12 bit feed forward torque, between -18 and 18 N-m
-    #     /// CAN Packet is 8 8-bit words
-    #     /// Formatted as follows.  For each quantity, bit 0 is LSB
-    #     /// 0: [position[15-8]]
-    #     /// 1: [position[7-0]]
-    #     /// 2: [velocity[11-4]]
-    #     /// 3: [velocity[3-0], kp[11-8]]
-    #     /// 4: [kp[7-0]]
-    #     /// 5: [kd[11-4]]
-    #     /// 6: [kd[3-0], torque[11-8]]
-    #     /// 7: [torque[7-0]]
-    #     '''
-    #     position = math.radians(p_des_deg)
-    #     velocity = math.radians(v_des_deg)
-
-    #     rawPosition = float_to_uint(position, P_MIN, P_MAX, 16)
-    #     rawVelocity = float_to_uint(velocity, V_MIN, V_MAX, 12)
-    #     rawTorque = float_to_uint(tau_ff, T_MIN, T_MAX, 12)
-
-    #     rawKp = ((maxRawKp * kp) / KP_MAX)
-
-    #     rawKd = ((maxRawKd * kd) / KD_MAX)
-
-    #     return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
-
     def convert_physical_rad_to_raw(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
 
-        rawPosition = float_to_uint(p_des_rad, P_MIN, P_MAX, 16)
-        rawVelocity = float_to_uint(v_des_rad, V_MIN, V_MAX, 12)
-        rawTorque = float_to_uint(tau_ff, T_MIN, T_MAX, 12)
+        rawPosition = float_to_uint(p_des_rad, self.motorParams['P_MIN'],
+                                    self.motorParams['P_MAX'], 16)
+        rawVelocity = float_to_uint(v_des_rad, self.motorParams['V_MIN'],
+                                    self.motorParams['V_MAX'], 12)
+        rawTorque = float_to_uint(tau_ff, self.motorParams['T_MIN'], self.motorParams['T_MAX'], 12)
 
-        rawKp = ((maxRawKp * kp) / KP_MAX)
+        rawKp = ((maxRawKp * kp) / self.motorParams['KP_MAX'])
 
-        rawKd = ((maxRawKd * kd) / KD_MAX)
+        rawKd = ((maxRawKd * kd) / self.motorParams['KD_MAX'])
 
         return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
 
@@ -406,9 +377,9 @@ class CanMotorController():
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         """
         # Change the motor axis to outward instead of inward.
-        p_des_rad = p_des_rad * AXIS_DIRECTION
-        v_des_rad = v_des_rad * AXIS_DIRECTION
-        tau_ff = tau_ff * AXIS_DIRECTION
+        p_des_rad = p_des_rad * self.motorParams['AXIS_DIRECTION']
+        v_des_rad = v_des_rad * self.motorParams['AXIS_DIRECTION']
+        tau_ff = tau_ff * self.motorParams['AXIS_DIRECTION']
 
         rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
                                                                 v_des_rad, kp, kd, tau_ff)
@@ -419,9 +390,9 @@ class CanMotorController():
                                                             rawMotorData[2])
 
         # Invert the returned data also to change the motor axis from inward to outward
-        pos = pos * AXIS_DIRECTION
-        vel = vel * AXIS_DIRECTION
-        curr = curr * AXIS_DIRECTION
+        pos = pos * self.motorParams['AXIS_DIRECTION']
+        vel = vel * self.motorParams['AXIS_DIRECTION']
+        curr = curr * self.motorParams['AXIS_DIRECTION']
 
         return pos, vel, curr
 
@@ -435,14 +406,13 @@ class CanMotorController():
                             V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW,
                             T_MIN_NEW (Nm), T_MAX_NEW (Nm))
         """
-        global P_MIN, P_MAX, V_MIN, V_MAX, KP_MIN, KP_MAX, KD_MIN, KD_MAX, T_MIN, T_MAX
-        P_MIN = P_MIN_NEW
-        P_MAX = P_MAX_NEW
-        V_MIN = V_MIN_NEW
-        V_MAX = V_MAX_NEW
-        KP_MIN = KP_MIN_NEW
-        KP_MAX = KP_MAX_NEW
-        KD_MIN = KD_MIN_NEW
-        KD_MAX = KD_MAX_NEW
-        T_MIN = T_MIN_NEW
-        T_MAX = T_MAX_NEW
+        self.motorParams['P_MIN'] = P_MIN_NEW
+        self.motorParams['P_MAX'] = P_MAX_NEW
+        self.motorParams['V_MIN'] = V_MIN_NEW
+        self.motorParams['V_MAX'] = V_MAX_NEW
+        self.motorParams['KP_MIN'] = KP_MIN_NEW
+        self.motorParams['KP_MAX'] = KP_MAX_NEW
+        self.motorParams['KD_MIN'] = KD_MIN_NEW
+        self.motorParams['KD_MAX'] = KD_MAX_NEW
+        self.motorParams['T_MIN'] = T_MIN_NEW
+        self.motorParams['T_MAX'] = T_MAX_NEW
