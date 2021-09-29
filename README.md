@@ -38,7 +38,7 @@ Install via:
 
 **Use in Scripts:** Add the following import to your python script: `from canmotorlib import CanMotorController` after making sure this folder is available in the import path/PYTHONPATH.
 
-Example Motor Initialization: `motor = CanMotorController(can_socket='can0', motor_id=0x01, socket_timeout=0.5)`
+Example Motor Initialization: `motor = CanMotorController(can_socket='can0', motor_id=0x01, motor_type='AK80_6_V2', socket_timeout=0.5)`
 
 Available Functions:
 
