@@ -48,7 +48,7 @@ AK80_6_V2_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -12.0,
                 "T_MAX" : 12.0,
-                "AXIS_DIRECTION" : -1
+                "AXIS_DIRECTION" : 1
                 }
 
 # Working parameters for AK80-9 V2.0 firmware
@@ -63,7 +63,7 @@ AK80_9_V2_PARAMS = {
                     "KD_MAX" : 5.0,
                     "T_MIN" : -18.0,
                     "T_MAX" : 18.0,
-                    "AXIS_DIRECTION" : -1
+                    "AXIS_DIRECTION" : 1
                     }
 
 
@@ -118,6 +118,7 @@ class CanMotorController():
 
     can_socket_declared = False
     motor_socket = None
+    motorParams = AK80_6_V2_PARAMS	# default choice
 
     def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V2',
                 socket_timeout=0.05):
