@@ -3,12 +3,10 @@
 # Dependencies:
 
 * bitstring
-* numpy
-* sockets
 
 Install via:
 
-`pip3 install bitstring sockets numpy pandas`
+`pip3 install bitstring`
 
 # Documentation
 
@@ -28,15 +26,11 @@ Install via:
 
   * To bring up the `can0` interface, run: `sudo ip link set up can0`
 
-  Note: Alternatively, one could run the shell script `setup_caninterface.sh` which will do the job for you. 
-
 * To change motor parameters such as CAN ID or to calibrate the encoder, a serial connection is used. The serial terminal GUI used on linux for this purpose is `cutecom`
 
 # Usage:
 
-**Testing Communication:** To enable one motor at `0x01`, set zero position and disable the motor, run: `python3 can_motorlib_test.py can0`
-
-**Use in Scripts:** Add the following import to your python script: `from canmotorlib import CanMotorController` after making sure this folder is available in the import path/PYTHONPATH.
+Import: `from motor_driver.canmotorlib import CanMotorController`
 
 Example Motor Initialization: `motor = CanMotorController(can_socket='can0', motor_id=0x01, motor_type='AK80_6_V2', socket_timeout=0.5)`
 
@@ -47,7 +41,60 @@ Available Functions:
 - `set_zero_position()`
 - `send_deg_command(position_in_degrees, velocity_in_degrees, Kp, Kd, tau_ff):`
 - `send_rad_command(position_in_radians, velocity_in_radians, Kp, Kd, tau_ff):`
+- `change_motor_constants(P_MIN_NEW, P_MAX_NEW, V_MIN_NEW, V_MAX_NEW, KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW, T_MIN_NEW, T_MAX_NEW)`
 
-All functions return current position, velocity, torque in SI units except for `send_deg_command`.
+All motor communication functions return current position, velocity, torque in SI units except for `send_deg_command`. `change_motor_constants` does not return anything.
 
-**Performance Profiler:** Sends and received 1000 zero commands to measure the communication frequency with 1/2 motors. Be careful as the motor torque will be set to zero.
+# Supported Motor Configurations:
+
+- AK80-6 (From Cubemars, Firmware versions v1 and v2): `motor_type='AK80_6_V1'` and `motor_type='AK80_6_V2'`
+- AK80-9 (From Cubemars, Firmware version v2): `motor_type='AK80_9_V2'`
+
+```
+# Working parameters for AK80-6 V1.0 firmware
+AK80_6_V1_PARAMS = {
+                "P_MIN" : -95.5,
+                "P_MAX" : 95.5,
+                "V_MIN" : -45.0,
+                "V_MAX" : 45.0,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -18.0,
+                "T_MAX" : 18.0,
+                "AXIS_DIRECTION" : -1
+                }
+
+# Working parameters for AK80-6 V2.0 firmware
+AK80_6_V2_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -38.2,
+                "V_MAX" : 38.2,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500.0,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -12.0,
+                "T_MAX" : 12.0,
+                "AXIS_DIRECTION" : 1
+                }
+
+# Working parameters for AK80-9 V2.0 firmware
+AK80_9_V2_PARAMS = {
+                    "P_MIN" : -12.5,
+                    "P_MAX" : 12.5,
+                    "V_MIN" : -25.64,
+                    "V_MAX" : 25.64,
+                    "KP_MIN" : 0.0,
+                    "KP_MAX" : 500.0,
+                    "KD_MIN" : 0.0,
+                    "KD_MAX" : 5.0,
+                    "T_MIN" : -18.0,
+                    "T_MAX" : 18.0,
+                    "AXIS_DIRECTION" : 1
+                    }
+```
+
+To add a new constants configuration use the `change_motor_constants` function or create an issue with the constants and motor information on the GitHub page to be added to the driver.

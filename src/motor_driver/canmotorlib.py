@@ -20,8 +20,8 @@ legitimate_motors = [
                     "AK80_9_V2"
                     ]
 
-# Precompute Constants for conversion
-# Old Constants. Working with motor firmware version 1.0
+# Constants for conversion
+# Working parameters for AK80-6 V1.0 firmware
 AK80_6_V1_PARAMS = {
                 "P_MIN" : -95.5,
                 "P_MAX" : 95.5,
