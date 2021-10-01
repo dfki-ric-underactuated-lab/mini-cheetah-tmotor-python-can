@@ -4,7 +4,7 @@ This driver was developed at Robotics Innovation Center at DFKI GmbH, Bremen.
 
 It assumes the use of a CAN to USB adapter (such as PEAK System's PCAN-USB or ESD's CAN-USB/2) connected to a linux (tested on Ubuntu) computer. The SocketCAN inteface is used, thus allowing the use of Python Socket library.
 
-Initial tests show communication (send-reply) frequencies of ~800Hz  using PCAN-USB and ~1500 using ESD CAN-USB/2.
+Initial tests show communication (send-reply) frequencies of ~800Hz  using PCAN-USB and ~1500Hz using ESD CAN-USB/2.
 
 # Dependencies:
 
@@ -36,7 +36,7 @@ Install via:
 
 # Usage:
 
-Import: `from motor_driver.canmotorlib import CanMotorController`
+Import: `from motor_driver.canmotorlib import CanMotorController` if installed via `pip`. Otherwise, adjust import statement based on system's `PYTHONPATH` (e.g. when cloned from GitHub).
 
 Example Motor Initialization: `motor = CanMotorController(can_socket='can0', motor_id=0x01, motor_type='AK80_6_V2', socket_timeout=0.5)`
 
