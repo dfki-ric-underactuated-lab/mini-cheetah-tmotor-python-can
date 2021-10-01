@@ -377,6 +377,18 @@ class CanMotorController():
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
         """
+        # Check for Torque Limits
+        if (tau_ff < self.motorParams['T_MIN']):
+            print('Torque Commanded lower than the limit. Clipping Torque...')
+            print('Commanded Torque: {}'.format(tau_ff))
+            print('Torque Limit: {}'.format(self.motorParams['T_MIN']))
+            tau_ff = self.motorParams['T_MIN']
+        elif (tau_ff > self.motorParams['T_MAX']):
+            print('Torque Commanded higher than the limit. Clipping Torque...')
+            print('Commanded Torque: {}'.format(tau_ff))
+            print('Torque Limit: {}'.format(self.motorParams['T_MAX']))
+            tau_ff = self.motorParams['T_MAX']
+
         # Change the motor axis to outward instead of inward.
         p_des_rad = p_des_rad * self.motorParams['AXIS_DIRECTION']
         v_des_rad = v_des_rad * self.motorParams['AXIS_DIRECTION']
