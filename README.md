@@ -104,3 +104,7 @@ AK80_9_V2_PARAMS = {
 ```
 
 To add a new constants configuration use the `change_motor_constants` function or create an issue with the constants and motor information on the GitHub page to be added to the driver.
+
+# Known Issues
+
+When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. One workaround is power cycling them. As this is experimental software, there might be other unknown issues. 
