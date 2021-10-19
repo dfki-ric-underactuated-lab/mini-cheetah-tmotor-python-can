@@ -1,6 +1,6 @@
 # Python Motor Driver for Mini Cheetah Actuator: T-Motor AK80-6
 
-This driver was developed at Robotics Innovation Center at DFKI GmbH, Bremen.
+This driver was developed at the Underactuated Lab in Robotics Innovation Center at DFKI GmbH, Bremen.
 
 It assumes the use of a CAN to USB adapter (such as PEAK System's PCAN-USB or ESD's CAN-USB/2) connected to a linux (tested on Ubuntu) computer. The SocketCAN inteface is used, thus allowing the use of Python Socket library.
 
