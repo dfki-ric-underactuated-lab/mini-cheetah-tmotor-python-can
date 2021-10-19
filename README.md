@@ -4,7 +4,7 @@ This driver was developed at the Underactuated Lab in Robotics Innovation Center
 
 It assumes the use of a CAN to USB adapter (such as PEAK System's PCAN-USB or ESD's CAN-USB/2) connected to a linux (tested on Ubuntu) computer. The SocketCAN inteface is used, thus allowing the use of Python Socket library.
 
-Initial tests show communication (send-reply) frequencies of ~800Hz  using PCAN-USB and ~1500Hz using ESD CAN-USB/2.
+Initial tests show communication (send-reply) frequencies of ~800Hz  using PCAN-USB and ~1500Hz using ESD CAN-USB/2 with a single motor connected.
 
 # Dependencies:
 
