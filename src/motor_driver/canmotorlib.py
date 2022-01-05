@@ -36,6 +36,36 @@ AK80_6_V1_PARAMS = {
                 "AXIS_DIRECTION" : -1
                 }
 
+# Working parameters for AK80-6 V1.1 firmware
+AK80_6_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -22.5,
+                "V_MAX" : 22.5,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -12.0,
+                "T_MAX" : 12.0,
+                "AXIS_DIRECTION" : -1
+                }
+
+# Working parameters for AK80-9 V1.1 firmware
+AK80_9_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -22.5,
+                "V_MAX" : 22.5,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -18.0,
+                "T_MAX" : 18.0,
+                "AXIS_DIRECTION" : -1
+                }
+
 # Working parameters for AK80-6 V2.0 firmware
 AK80_6_V2_PARAMS = {
                 "P_MIN" : -12.5,
@@ -118,9 +148,9 @@ class CanMotorController():
 
     can_socket_declared = False
     motor_socket = None
-    motorParams = AK80_6_V2_PARAMS	# default choice
+    motorParams = AK80_6_V1p1_PARAMS	# default choice
 
-    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V2',
+    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V1p1_PARAMS',
                 socket_timeout=0.05):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
@@ -130,6 +160,10 @@ class CanMotorController():
         assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
         if motor_type == 'AK80_6_v1':
             self.motorParams = AK80_6_V1_PARAMS
+        elif motor_type == 'AK80_6_v1p1':
+            self.motorParams = AK80_6_V1p1_PARAMS
+        elif motor_type == 'AK80_9_v1p1':
+            self.motorParams = AK80_9_V1p1_PARAMS
         elif motor_type == 'AK80_6_v2':
             self.motorParams = AK80_6_V2_PARAMS
         elif motor_type == 'AK80_9_v2':
