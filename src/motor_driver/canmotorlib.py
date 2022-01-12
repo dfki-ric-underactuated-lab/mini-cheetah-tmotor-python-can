@@ -48,7 +48,7 @@ AK80_6_V1p1_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -12.0,
                 "T_MAX" : 12.0,
-                "AXIS_DIRECTION" : -1
+                "AXIS_DIRECTION" : 1
                 }
 
 # Working parameters for AK80-9 V1.1 firmware
@@ -63,7 +63,7 @@ AK80_9_V1p1_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -18.0,
                 "T_MAX" : 18.0,
-                "AXIS_DIRECTION" : -1
+                "AXIS_DIRECTION" : 1
                 }
 
 # Working parameters for AK80-6 V2.0 firmware
