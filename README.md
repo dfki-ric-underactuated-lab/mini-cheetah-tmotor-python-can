@@ -53,8 +53,8 @@ All motor communication functions return current position, velocity, torque in S
 
 # Supported Motor Configurations:
 
-- AK80-6 (From Cubemars, Firmware versions v1 and v2): `motor_type='AK80_6_V1'` and `motor_type='AK80_6_V2'`
-- AK80-9 (From Cubemars, Firmware version v2): `motor_type='AK80_9_V2'`
+- AK80-6 (From Cubemars, Firmware versions V1, V1.1, and V2): `motor_type='AK80_6_V1'`, `motor_type='AK80_6_V1p1'` and `motor_type='AK80_6_V2'`
+- AK80-9 (From Cubemars, Firmware version V1.1 and V2): `motor_type='AK80_9_V1p1'` and `motor_type='AK80_9_V2'`
 
 ```
 # Working parameters for AK80-6 V1.0 firmware
@@ -69,6 +69,21 @@ AK80_6_V1_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -18.0,
                 "T_MAX" : 18.0,
+                "AXIS_DIRECTION" : -1
+                }
+
+# Working parameters for AK80-6 V1.1 firmware
+AK80_6_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -22.5,
+                "V_MAX" : 22.5,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -12.0,
+                "T_MAX" : 12.0,
                 "AXIS_DIRECTION" : -1
                 }
 
@@ -87,6 +102,21 @@ AK80_6_V2_PARAMS = {
                 "AXIS_DIRECTION" : 1
                 }
 
+# Working parameters for AK80-9 V1.1 firmware
+AK80_9_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -22.5,
+                "V_MAX" : 22.5,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -18.0,
+                "T_MAX" : 18.0,
+                "AXIS_DIRECTION" : 1
+                }
+
 # Working parameters for AK80-9 V2.0 firmware
 AK80_9_V2_PARAMS = {
                     "P_MIN" : -12.5,
@@ -101,10 +131,13 @@ AK80_9_V2_PARAMS = {
                     "T_MAX" : 18.0,
                     "AXIS_DIRECTION" : 1
                     }
+
 ```
 
 To add a new constants configuration use the `change_motor_constants` function or create an issue with the constants and motor information on the GitHub page to be added to the driver.
 
 # Known Issues
 
-When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. One workaround is power cycling them. As this is experimental software, there might be other unknown issues. 
+When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. One workaround is power cycling them. This is probably due to separate grounds for the power and CAN communication on the motors. As the ground for the CAN can be via the control computer ground and the power ground is via the power supply ground, these can have small voltage differences which can cause the initial kick. This is the current best guess for when experiencing the issue. 
+
+As this is experimental software, there might be other unknown issues. 

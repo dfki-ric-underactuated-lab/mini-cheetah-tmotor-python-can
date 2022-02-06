@@ -16,7 +16,9 @@ can_frame_fmt_recv = "=IB3x6s"
 # List of Motors Supported by this Driver
 legitimate_motors = [
                     "AK80_6_V1",
+                    "AK80_6_V1p1",
                     "AK80_6_V2",
+                    "AK80_9_V1p1",
                     "AK80_9_V2"
                     ]
 
@@ -48,6 +50,21 @@ AK80_6_V1p1_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -12.0,
                 "T_MAX" : 12.0,
+                "AXIS_DIRECTION" : -1
+                }
+
+# Working parameters for AK80-6 V2.0 firmware
+AK80_6_V2_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -38.2,
+                "V_MAX" : 38.2,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500.0,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -12.0,
+                "T_MAX" : 12.0,
                 "AXIS_DIRECTION" : 1
                 }
 
@@ -63,21 +80,6 @@ AK80_9_V1p1_PARAMS = {
                 "KD_MAX" : 5.0,
                 "T_MIN" : -18.0,
                 "T_MAX" : 18.0,
-                "AXIS_DIRECTION" : 1
-                }
-
-# Working parameters for AK80-6 V2.0 firmware
-AK80_6_V2_PARAMS = {
-                "P_MIN" : -12.5,
-                "P_MAX" : 12.5,
-                "V_MIN" : -38.2,
-                "V_MAX" : 38.2,
-                "KP_MIN" : 0.0,
-                "KP_MAX" : 500.0,
-                "KD_MIN" : 0.0,
-                "KD_MAX" : 5.0,
-                "T_MIN" : -12.0,
-                "T_MAX" : 12.0,
                 "AXIS_DIRECTION" : 1
                 }
 
@@ -148,25 +150,25 @@ class CanMotorController():
 
     can_socket_declared = False
     motor_socket = None
-    motorParams = AK80_6_V1p1_PARAMS	# default choice
 
-    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V1p1_PARAMS',
+    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V1p1',
                 socket_timeout=0.05):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
         Sets up the socket communication for rest of the functions.
         """
+        self.motorParams = AK80_6_V1p1_PARAMS	# default choice
         print('Using Motor Type: {}'.format(motor_type))
         assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
-        if motor_type == 'AK80_6_v1':
+        if motor_type == 'AK80_6_V1':
             self.motorParams = AK80_6_V1_PARAMS
-        elif motor_type == 'AK80_6_v1p1':
+        elif motor_type == 'AK80_6_V1p1':
             self.motorParams = AK80_6_V1p1_PARAMS
-        elif motor_type == 'AK80_9_v1p1':
-            self.motorParams = AK80_9_V1p1_PARAMS
-        elif motor_type == 'AK80_6_v2':
+        elif motor_type == 'AK80_6_V2':
             self.motorParams = AK80_6_V2_PARAMS
-        elif motor_type == 'AK80_9_v2':
+        elif motor_type == 'AK80_9_V1p1':
+            self.motorParams = AK80_9_V1p1_PARAMS
+        elif motor_type == 'AK80_9_V2':
             self.motorParams = AK80_9_V2_PARAMS
 
         can_socket = (can_socket, )
