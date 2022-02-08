@@ -1,9 +1,12 @@
 name: Publish the update to TestPyPi and PyPi for Python Packaging
 
-on: push
+on: 
+  pull_request:
+    types: [closed]
 
 jobs:
   build-n-publish:
+    if: github.event.pull_request.merged == true
     name: Build and publish Python distributions to PyPI and TestPyPI
     runs-on: ubuntu-20.04
     steps:
