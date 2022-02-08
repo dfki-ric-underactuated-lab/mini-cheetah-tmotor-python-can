@@ -341,9 +341,19 @@ class CanMotorController():
         physicalCurrent = uint_to_float(currentRawValue, self.motorParams['T_MIN'],
                                         self.motorParams['T_MAX'], 12)
 
+        # Correct Axis Direction
+        physicalPositionRad = physicalPositionRad * self.motorParams['AXIS_DIRECTION']
+        physicalVelocityRad = physicalVelocityRad * self.motorParams['AXIS_DIRECTION']
+        physicalCurrent = physicalCurrent * self.motorParams['AXIS_DIRECTION']
+
         return physicalPositionRad, physicalVelocityRad, physicalCurrent
 
     def convert_physical_rad_to_raw(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
+        
+        # Correct the Axis Direction
+        p_des_rad = p_des_rad * self.motorParams['AXIS_DIRECTION']
+        v_des_rad = v_des_rad * self.motorParams['AXIS_DIRECTION']
+        tau_ff = tau_ff * self.motorParams['AXIS_DIRECTION']
 
         rawPosition = float_to_uint(p_des_rad, self.motorParams['P_MIN'],
                                     self.motorParams['P_MAX'], 16)
@@ -394,13 +404,7 @@ class CanMotorController():
         """
         p_des_rad = math.radians(p_des_deg)
         v_des_rad = math.radians(v_des_deg)
-        # rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_deg_to_raw(p_des_deg,
-        #                                                         v_des_deg, kp, kd, tau_ff)
 
-        # motorStatusData = self._send_raw_command(rawPos, rawVel, rawKp, rawKd, rawTauff)
-        # rawMotorData = self.decode_motor_status(motorStatusData)
-        # pos, vel, curr = self.convert_raw_to_physical_deg(rawMotorData[0], rawMotorData[1],
-        #                                                     rawMotorData[2])
         pos_rad, vel_rad, curr = self.send_rad_command(p_des_rad, v_des_rad, kp, kd, tau_ff)
         pos = math.degrees(pos_rad)
         vel = math.degrees(vel_rad)
@@ -425,11 +429,6 @@ class CanMotorController():
             print('Torque Limit: {}'.format(self.motorParams['T_MAX']))
             tau_ff = self.motorParams['T_MAX']
 
-        # Change the motor axis to outward instead of inward.
-        p_des_rad = p_des_rad * self.motorParams['AXIS_DIRECTION']
-        v_des_rad = v_des_rad * self.motorParams['AXIS_DIRECTION']
-        tau_ff = tau_ff * self.motorParams['AXIS_DIRECTION']
-
         rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
                                                                 v_des_rad, kp, kd, tau_ff)
 
@@ -437,11 +436,6 @@ class CanMotorController():
         rawMotorData = self.decode_motor_status(motorStatusData)
         pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
                                                             rawMotorData[2])
-
-        # Invert the returned data also to change the motor axis from inward to outward
-        pos = pos * self.motorParams['AXIS_DIRECTION']
-        vel = vel * self.motorParams['AXIS_DIRECTION']
-        curr = curr * self.motorParams['AXIS_DIRECTION']
 
         return pos, vel, curr
 
