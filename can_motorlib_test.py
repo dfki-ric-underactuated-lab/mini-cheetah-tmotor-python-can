@@ -1,7 +1,7 @@
 import sys
 import time
 import numpy as np
-from canmotorlib import CanMotorController
+from src.motor_driver.canmotorlib import CanMotorController
 
 # Motor ID
 motor_id = 0x01
@@ -31,8 +31,17 @@ time.sleep(1)
 
 while abs(np.rad2deg(pos)) > 0.5:
     pos, vel, curr = motor_controller.set_zero_position()
-    print("Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), curr))
+    print("Zero Position: {}, Velocity: {}, Torque: {}".format(np.rad2deg(pos), np.rad2deg(vel), curr))
 
+time.sleep(1)
+
+# Moving 180 degrees
+pos, vel, curr = motor_controller.send_deg_command(0, 90, 0, 2, 0)
+print("Moving Position: {}, Velocity: {}, Torque: {}".format(pos, vel, curr))
+time.sleep(2)
+# Send zeros
+pos, vel, curr = motor_controller.send_deg_command(0, 0, 0, 0, 0)
+print("Reached Position: {}, Velocity: {}, Torque: {}".format(pos, vel, curr))
 time.sleep(1)
 
 pos, vel, curr = motor_controller.disable_motor()

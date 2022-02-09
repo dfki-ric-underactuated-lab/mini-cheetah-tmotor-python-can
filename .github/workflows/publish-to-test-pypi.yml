@@ -1,8 +1,8 @@
 name: Publish the update to TestPyPi and PyPi for Python Packaging
 
 on: 
-  pull_request:
-    types: [closed]
+  release:
+    types: [published]
 
 jobs:
   build-n-publish:
