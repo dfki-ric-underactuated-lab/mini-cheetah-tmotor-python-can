@@ -59,7 +59,7 @@ All motor communication functions return current position, velocity, torque in S
 
 - AK80-6 (From Cubemars, Firmware versions V1, V1.1, and V2): `motor_type='AK80_6_V1'`, `motor_type='AK80_6_V1p1'` and `motor_type='AK80_6_V2'`
 - AK80-9 (From Cubemars, Firmware version V1.1 and V2): `motor_type='AK80_9_V1p1'` and `motor_type='AK80_9_V2'`
-- AK10-9 (From Cubemars, Firmware version V1.1): `motor_type='AK10_9_V1p1'`
+- AK10-9 (From Cubemars, Firmware version V1.1): `motor_type='AK10_9_V1p1'`. **TODO:** The temperature and error codes are received but not yet decoded for the new firmware for this motor.
 
 ```
 # Working parameters for AK80-6 V1.0 firmware
