@@ -12,6 +12,8 @@ from bitstring import BitArray
 can_frame_fmt_send = "=IB3x8s"
 # 6 bytes are received from the motor
 can_frame_fmt_recv = "=IB3x6s"
+# Total CAN Frame size is 14 Bytes: 8 Bytes overhead + 6 Bytes data
+recvBytes = 14
 
 # List of Motors Supported by this Driver
 legitimate_motors = [
@@ -19,7 +21,8 @@ legitimate_motors = [
                     "AK80_6_V1p1",
                     "AK80_6_V2",
                     "AK80_9_V1p1",
-                    "AK80_9_V2"
+                    "AK80_9_V2",
+                    "AK10_9_V1p1"
                     ]
 
 # Constants for conversion
@@ -98,6 +101,21 @@ AK80_9_V2_PARAMS = {
                     "AXIS_DIRECTION" : 1
                     }
 
+# Working parameters for AK10-9 V1.1 firmware
+AK10_9_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -50.0,
+                "V_MAX" : 50.0,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -65.0,
+                "T_MAX" : 65.0,
+                "AXIS_DIRECTION" : -1
+                }
+
 
 maxRawPosition = 2**16 - 1                      # 16-Bits for Raw Position Values
 maxRawVelocity = 2**12 - 1                      # 12-Bits for Raw Velocity Values
@@ -170,6 +188,13 @@ class CanMotorController():
             self.motorParams = AK80_9_V1p1_PARAMS
         elif motor_type == 'AK80_9_V2':
             self.motorParams = AK80_9_V2_PARAMS
+        elif motor_type == 'AK10_9_V1p1':
+            # Experimental Support
+            self.motorParams = AK10_9_V1p1_PARAMS
+            # This motor/firmware also sends back temperature data
+            # and an error code. Hence data is 2 bytes longer.
+            recvBytes = 16
+            can_frame_fmt_recv = "=IB3x8s"
 
         can_socket = (can_socket, )
         self.motor_id = motor_id
@@ -213,15 +238,15 @@ class CanMotorController():
 
     def _recv_can_frame(self):
         """
-        Recieve a CAN frame and unpack it. Returns can_id, can_dlc (data length), data (in bytes)
+        Receive a CAN frame and unpack it. Returns can_id, can_dlc (data length), data (in bytes)
         """
         try:
             # The motor sends back only 6 bytes.
-            frame, addr = CanMotorController.motor_socket.recvfrom(14)
+            frame, addr = CanMotorController.motor_socket.recvfrom(recvBytes)
             can_id, can_dlc, data = struct.unpack(can_frame_fmt_recv, frame)
             return can_id, can_dlc, data[:can_dlc]
         except Exception as e:
-            print("Unable to Receive CAN Franme.")
+            print("Unable to Receive CAN Frame.")
             print("Error: ", e)
 
     def enable_motor(self):
@@ -299,7 +324,7 @@ class CanMotorController():
         self._recv_bytes.bytes = data_frame
         dataBitArray = self._recv_bytes.bin
 
-        # Separate motor satus values from the bit string.
+        # Separate motor status values from the bit string.
         # Motor ID not considered necessary at the moment.
         # motor_id = dataBitArray[:8]
         positionBitArray = dataBitArray[8:24]
@@ -397,10 +422,11 @@ class CanMotorController():
 
     def send_deg_command(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
         """
-        TODO: Add assert statements to validate input ranges.
         Function to send data to motor in physical units:
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
+        If any input is outside limits, it is clipped. Only if torque is outside limits, a log 
+        message is shown.
         """
         p_des_rad = math.radians(p_des_deg)
         v_des_rad = math.radians(v_des_deg)
@@ -412,10 +438,11 @@ class CanMotorController():
 
     def send_rad_command(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
         """
-        TODO: Add assert statements to validate input ranges.
         Function to send data to motor in physical units:
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
+        If any input is outside limits, it is clipped. Only if torque is outside limits, a log 
+        message is shown.
         """
         # Check for Torque Limits
         if (tau_ff < self.motorParams['T_MIN']):
@@ -428,6 +455,15 @@ class CanMotorController():
             print('Commanded Torque: {}'.format(tau_ff))
             print('Torque Limit: {}'.format(self.motorParams['T_MAX']))
             tau_ff = self.motorParams['T_MAX']
+
+        # Clip Position if outside Limits
+        p_des_rad = min(max(self.motorParams['P_MIN'], p_des_rad), self.motorParams['P_MAX'])
+        # Clip Velocity if outside Limits
+        v_des_rad = min(max(self.motorParams['V_MIN'], v_des_rad), self.motorParams['V_MAX'])
+        # Clip Kp if outside Limits
+        kp = min(max(self.motorParams['KP_MIN'], kp), self.motorParams['KP_MAX'])
+        # Clip Kd if outside Limits
+        kd = min(max(self.motorParams['KD_MIN'], kd), self.motorParams['KD_MAX'])
 
         rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
                                                                 v_des_rad, kp, kd, tau_ff)
@@ -443,7 +479,7 @@ class CanMotorController():
                             KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW, T_MIN_NEW, T_MAX_NEW):
         """
         Function to change the global motor constants. Default values are for AK80-6 motor from
-        CubeMars. For a differnt motor, the min/max values can be changed here for correct
+        CubeMars. For a different motor, the min/max values can be changed here for correct
         conversion.
         change_motor_params(P_MIN_NEW (radians), P_MAX_NEW (radians), V_MIN_NEW (rad/s),
                             V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW,

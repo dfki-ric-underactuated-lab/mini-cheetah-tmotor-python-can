@@ -1,8 +1,8 @@
-# Python Motor Driver for Mini Cheetah Actuator: T-Motor AK80-6
+# Python Motor Driver for Mini Cheetah-type Actuators from T-Motor/CubeMars
 
 This driver was developed at the Underactuated Lab in Robotics Innovation Center at DFKI GmbH, Bremen.
 
-It assumes the use of a CAN to USB adapter (such as [PEAK System's PCAN-USB](https://www.peak-system.com/PCAN-USB.199.0.html?&L=1) or [ESD's CAN-USB/2](https://esd.eu/produkte/can-usb-2)) connected to a linux (tested on Ubuntu) computer. The SocketCAN inteface is used, thus allowing the use of Python Socket library.
+It assumes the use of a CAN to USB adapter (such as [PEAK System's PCAN-USB](https://www.peak-system.com/PCAN-USB.199.0.html?&L=1) or [ESD's CAN-USB/2](https://esd.eu/produkte/can-usb-2)) connected to a linux (tested on Ubuntu) computer. The SocketCAN interface is used, thus allowing the use of Python Socket library.
 
 Initial tests show communication (send-reply) frequencies of ~800Hz  using PCAN-USB and ~1500Hz using ESD CAN-USB/2 with a single motor connected.
 
@@ -19,7 +19,7 @@ Install via:
 - Useful videos: 
     - [From T-Motor](https://www.youtube.com/watch?v=hbqQCgebaF8)
     - [From Skyentific](https://www.youtube.com/watch?v=HzY9vzgPZkA)
-- [Datasheet](https://store-en.tmotor.com/goods.php?id=981)
+- [Motor Datasheets](https://store.cubemars.com/images/file/20220307/1646619452473352.pdf)
 - [Ben Katz Documentation](https://docs.google.com/document/d/1dzNVzblz6mqB3eZVEMyi2MtSngALHdgpTaDJIW_BpS4/edit)
 
 # Pre-requisites:
@@ -32,7 +32,11 @@ Install via:
 
   * To bring up the `can0` interface, run: `sudo ip link set up can0`
 
-* To change motor parameters such as CAN ID or to calibrate the encoder, a serial connection is used. The serial terminal GUI used on linux for this purpose is `cutecom`
+* To change motor parameters such as CAN ID or to calibrate the encoder, a serial connection is used. The serial terminal used on linux for this purpose is `screen`. Example usage:
+```
+sudo apt-get install screen
+screen /dev/ttyUSB0 921600
+```
 
 # Usage:
 
@@ -55,6 +59,7 @@ All motor communication functions return current position, velocity, torque in S
 
 - AK80-6 (From Cubemars, Firmware versions V1, V1.1, and V2): `motor_type='AK80_6_V1'`, `motor_type='AK80_6_V1p1'` and `motor_type='AK80_6_V2'`
 - AK80-9 (From Cubemars, Firmware version V1.1 and V2): `motor_type='AK80_9_V1p1'` and `motor_type='AK80_9_V2'`
+- AK10-9 (From Cubemars, Firmware version V1.1): `motor_type='AK10_9_V1p1'`
 
 ```
 # Working parameters for AK80-6 V1.0 firmware
@@ -131,6 +136,21 @@ AK80_9_V2_PARAMS = {
                     "T_MAX" : 18.0,
                     "AXIS_DIRECTION" : 1
                     }
+
+# Working parameters for AK10-9 V1.1 firmware
+AK10_9_V1p1_PARAMS = {
+                "P_MIN" : -12.5,
+                "P_MAX" : 12.5,
+                "V_MIN" : -50.0,
+                "V_MAX" : 50.0,
+                "KP_MIN" : 0.0,
+                "KP_MAX" : 500,
+                "KD_MIN" : 0.0,
+                "KD_MAX" : 5.0,
+                "T_MIN" : -65.0,
+                "T_MAX" : 65.0,
+                "AXIS_DIRECTION" : -1
+                }
 
 ```
 
