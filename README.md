@@ -176,6 +176,6 @@ To add a new constants configuration use the `change_motor_constants` function o
 
 # Known Issues
 
-When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. One workaround is power cycling them. This is probably due to separate grounds for the power and CAN communication on the motors. As the ground for the CAN can be via the control computer ground and the power ground is via the power supply ground, these can have small voltage differences which can cause the initial kick. This is the current best guess for when experiencing the issue. 
+**Issue Fixed**: When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. This was fixed.
 
-As this is experimental software, there might be other unknown issues. 
+As this is experimental software, there might be other unknown issues.

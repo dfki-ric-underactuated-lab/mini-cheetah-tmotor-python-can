@@ -289,6 +289,14 @@ class CanMotorController():
         Sends the disable motor command to the motor.
         """
         try:
+            # Bugfix: To remove the initial kick at motor start.
+            # The current working theory is that the motor "remembers" the last command. And this
+            # causes an initial kick as the motor controller starts. The fix is then to set the 
+            # last command to zero so that this does not happen. For the user, the behavior does
+            # not change as zero command + disable is same as disable.
+            _, _, _ = self.send_rad_command(0, 0, 0, 0, 0)
+
+            # Do the actual disabling after zero command.
             self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFD')
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
