@@ -22,6 +22,7 @@ legitimate_motors = [
                     "AK80_6_V2",
                     "AK80_9_V1p1",
                     "AK80_9_V2",
+                    "AK70_10_V1p1",
                     "AK10_9_V1p1"
                     ]
 
@@ -99,6 +100,21 @@ AK80_9_V2_PARAMS = {
                     "T_MIN" : -18.0,
                     "T_MAX" : 18.0,
                     "AXIS_DIRECTION" : 1
+                    }
+
+#  Working parameters for AK70-10 V1.1 firmware
+AK70_10_V1p1_params = {
+                      "P_MIN" :  -12.5,
+                      "P_MAX" :  12.5,
+                      "V_MIN" :  -50,
+                      "V_MAX" :  50,
+                      "KP_MIN" :  0,
+                      "KP_MAX" :  500,
+                      "KD_MIN" :  0,
+                      "KD_MAX" :  5,
+                      "T_MIN" :  -24.0,
+                      "T_MAX" :  24.0,
+                      "AXIS_DIRECTION" :  1
                     }
 
 # Working parameters for AK10-9 V1.1 firmware
@@ -195,6 +211,8 @@ class CanMotorController():
             # and an error code. Hence data is 2 bytes longer.
             recvBytes = 16
             can_frame_fmt_recv = "=IB3x8s"
+        elif motor_type == 'AK70_10_V1p1':
+            self.motorParams = AK70_10_V1p1_params
 
         can_socket = (can_socket, )
         self.motor_id = motor_id

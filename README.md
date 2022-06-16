@@ -1,3 +1,5 @@
+[![Downloads](https://static.pepy.tech/personalized-badge/mini-cheetah-motor-driver-socketcan?period=total&units=abbreviation&left_color=blue&right_color=black&left_text=PyPi%20Downloads)](https://pepy.tech/project/mini-cheetah-motor-driver-socketcan)
+
 # Python Motor Driver for Mini Cheetah-type Actuators from T-Motor/CubeMars
 
 This driver was developed at the Underactuated Lab in Robotics Innovation Center at DFKI GmbH, Bremen.
@@ -59,6 +61,7 @@ All motor communication functions return current position, velocity, torque in S
 
 - AK80-6 (From Cubemars, Firmware versions V1, V1.1, and V2): `motor_type='AK80_6_V1'`, `motor_type='AK80_6_V1p1'` and `motor_type='AK80_6_V2'`
 - AK80-9 (From Cubemars, Firmware version V1.1 and V2): `motor_type='AK80_9_V1p1'` and `motor_type='AK80_9_V2'`
+- AK70-10 (From Cubemars, Firmware version V1.1): `motor_type='AK70_10_V1p1'`
 - AK10-9 (From Cubemars, Firmware version V1.1): `motor_type='AK10_9_V1p1'`. **TODO:** The temperature and error codes are received but not yet decoded for the new firmware for this motor.
 
 ```
@@ -135,6 +138,21 @@ AK80_9_V2_PARAMS = {
                     "T_MIN" : -18.0,
                     "T_MAX" : 18.0,
                     "AXIS_DIRECTION" : 1
+                    }
+
+// Working parameters for AK70-10 V1.1 firmware
+AK70_10_V1p1_params = {
+                      "P_MIN" :  -12.5,
+                      "P_MAX" :  12.5,
+                      "V_MIN" :  -50,
+                      "V_MAX" :  50,
+                      "KP_MIN" :  0,
+                      "KP_MAX" :  500,
+                      "KD_MIN" :  0,
+                      "KD_MAX" :  5,
+                      "T_MIN" :  -24.0,
+                      "T_MAX" :  24.0,
+                      "AXIS_DIRECTION" :  1
                     }
 
 # Working parameters for AK10-9 V1.1 firmware
