@@ -1,7 +1,7 @@
 import sys
 import time
 import numpy as np
-from canmotorlib import CanMotorController
+from src.motor_driver.canmotorlib import CanMotorController
 
 
 def setZeroPosition(motor, initPos):
@@ -15,8 +15,8 @@ def setZeroPosition(motor, initPos):
 
 
 # Motor ID
-motor_id_shoulder = 0x01
-motor_id_elbow = 0x03
+motor_id_shoulder = 0x08
+motor_id_elbow = 0x09
 
 if len(sys.argv) != 2:
     print('Provide CAN device name (can0, slcan0 etc.)')
@@ -45,6 +45,8 @@ setZeroPosition(motor_shoulder, pos_shoulder)
 print("Setting Elbow Motor to Zero Position...")
 
 setZeroPosition(motor_elbow, pos_elbow)
+
+time.sleep(1)
 
 print("Disabling Motors...")
 

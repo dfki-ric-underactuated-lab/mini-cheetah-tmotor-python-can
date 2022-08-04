@@ -4,7 +4,7 @@ import numpy as np
 from src.motor_driver.canmotorlib import CanMotorController
 
 # Motor ID
-motor_id = 0x01
+motor_id = 0x05
 
 if len(sys.argv) != 2:
     print('Provide CAN device name (can0, slcan0 etc.)')
