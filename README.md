@@ -1,4 +1,5 @@
-[![Downloads](https://static.pepy.tech/personalized-badge/mini-cheetah-motor-driver-socketcan?period=total&units=abbreviation&left_color=blue&right_color=black&left_text=PyPi%20Downloads)](https://pepy.tech/project/mini-cheetah-motor-driver-socketcan)
+[![Downloads](https://static.pepy.tech/personalized-badge/mini-cheetah-motor-driver-socketcan?period=total&units=abbreviation&left_color=blue&right_color=black&left_text=PyPi%20Downloads)](https://pepy.tech/project/mini-cheetah-motor-driver-socketcan)   [![DOI](https://zenodo.org/badge/342504440.svg)](https://zenodo.org/badge/latestdoi/342504440)
+
 
 # Python Motor Driver for Mini Cheetah-type Actuators from T-Motor/CubeMars
 
