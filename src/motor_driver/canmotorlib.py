@@ -173,47 +173,45 @@ def waitOhneSleep(dt):
         pass
 
 
-class CanMotorController():
+class CanMotorController:
     """
     Class for creating a Mini-Cheetah Motor Controller over CAN. Uses SocketCAN driver for
     communication.
     """
-    
-    def __init__(self, can_socket='can0', motor_id=0x01, motor_type = 'AK80_6_V1p1',
-                socket_timeout=0.05):
+
+    def __init__(self, can_socket="can0", motor_id=0x01, motor_type="AK80_6_V1p1", socket_timeout=0.05):
         """
         Instantiate the class with socket name, motor ID, and socket timeout.
         Sets up the socket communication for rest of the functions.
         """
-        self.motorParams = AK80_6_V1p1_PARAMS	# default choice
-        print('Using Motor Type: {}'.format(motor_type))
-        assert motor_type in legitimate_motors, 'Motor Type not in list of accepted motors.'
-        if motor_type == 'AK80_6_V1':
+        self.motorParams = AK80_6_V1p1_PARAMS  # default choice
+        print("Using Motor Type: {}".format(motor_type))
+        assert motor_type in legitimate_motors, "Motor Type not in list of accepted motors."
+        if motor_type == "AK80_6_V1":
             self.motorParams = AK80_6_V1_PARAMS
-        elif motor_type == 'AK80_6_V1p1':
+        elif motor_type == "AK80_6_V1p1":
             self.motorParams = AK80_6_V1p1_PARAMS
-        elif motor_type == 'AK80_6_V2':
+        elif motor_type == "AK80_6_V2":
             self.motorParams = AK80_6_V2_PARAMS
-        elif motor_type == 'AK80_9_V1p1':
+        elif motor_type == "AK80_9_V1p1":
             self.motorParams = AK80_9_V1p1_PARAMS
-        elif motor_type == 'AK80_9_V2':
+        elif motor_type == "AK80_9_V2":
             self.motorParams = AK80_9_V2_PARAMS
-        elif motor_type == 'AK10_9_V1p1':
+        elif motor_type == "AK10_9_V1p1":
             # Experimental Support
             self.motorParams = AK10_9_V1p1_PARAMS
             # This motor/firmware also sends back temperature data
             # and an error code. Hence data is 2 bytes longer.
             recvBytes = 16
             can_frame_fmt_recv = "=IB3x8s"
-        elif motor_type == 'AK70_10_V1p1':
+        elif motor_type == "AK70_10_V1p1":
             self.motorParams = AK70_10_V1p1_params
 
-        can_socket = (can_socket, )
+        can_socket = (can_socket,)
         self.motor_id = motor_id
         # create a raw socket and bind it to the given CAN interface
         try:
-            self.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW,
-                                                            socket.CAN_RAW)
+            self.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
             self.motor_socket.bind(can_socket)
             self.motor_socket.settimeout(socket_timeout)
             print("Bound to: ", can_socket)
@@ -222,10 +220,12 @@ class CanMotorController():
             print("Error:", e)
 
         # Initialize the command BitArrays for performance optimization
-        self._p_des_BitArray = BitArray(uint=float_to_uint(0, self.motorParams['P_MIN'],
-                                                        self.motorParams['P_MAX'], 16), length=16)
-        self._v_des_BitArray = BitArray(uint=float_to_uint(0, self.motorParams['V_MIN'],
-                                                        self.motorParams['V_MAX'], 12), length=12)
+        self._p_des_BitArray = BitArray(
+            uint=float_to_uint(0, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16), length=16
+        )
+        self._v_des_BitArray = BitArray(
+            uint=float_to_uint(0, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12), length=12
+        )
         self._kp_BitArray = BitArray(uint=0, length=12)
         self._kd_BitArray = BitArray(uint=0, length=12)
         self._tau_BitArray = BitArray(uint=0, length=12)
@@ -262,16 +262,21 @@ class CanMotorController():
         Sends the enable motor command to the motor.
         """
         try:
-            self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC')
+            # Bugfix: To remove the initial kick at motor start.
+            # The current working theory is that the motor is not
+            # set to zero position when enabled. Hence the
+            # last command is executed. So we set zero position
+            # and then enable the motor.
+            self.set_zero_position()
+            self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFC")
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
-                                                            rawMotorData[2])
+            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2])
             print("Motor Enabled.")
             return pos, vel, curr
         except Exception as e:
-            print('Error Enabling Motor!')
+            print("Error Enabling Motor!")
             print("Error: ", e)
 
     def disable_motor(self):
@@ -281,7 +286,7 @@ class CanMotorController():
         try:
             # Bugfix: To remove the initial kick at motor start.
             # The current working theory is that the motor "remembers" the last command. And this
-            # causes an initial kick as the motor controller starts. The fix is then to set the 
+            # causes an initial kick as the motor controller starts. The fix is then to set the
             # last command to zero so that this does not happen. For the user, the behavior does
             # not change as zero command + disable is same as disable.
             _, _, _ = self.send_rad_command(0, 0, 0, 0, 0)
@@ -291,12 +296,11 @@ class CanMotorController():
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
-                                                            rawMotorData[2])
+            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2])
             print("Motor Disabled.")
             return pos, vel, curr
         except Exception as e:
-            print('Error Disabling Motor!')
+            print("Error Disabling Motor!")
             print("Error: ", e)
 
     def set_zero_position(self):
@@ -304,20 +308,19 @@ class CanMotorController():
         Sends command to set current position as Zero position.
         """
         try:
-            self._send_can_frame(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE')
+            self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE")
             waitOhneSleep(dt_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
-            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
-                                                            rawMotorData[2])
+            pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2])
             print("Zero Position set.")
             return pos, vel, curr
         except Exception as e:
-            print('Error Setting Zero Position!')
+            print("Error Setting Zero Position!")
             print("Error: ", e)
 
     def decode_motor_status(self, data_frame):
-        '''
+        """
         Function to decode the motor status reply message into its constituent raw values.
 
         /// CAN Reply Packet Structure ///
@@ -333,7 +336,7 @@ class CanMotorController():
         /// 4: [current[7-0]]
 
         returns: the following raw values as (u)int: position, velocity, current
-        '''
+        """
 
         # Convert the message from motor to a bit string as this is easier to deal with than hex
         # while seperating individual values.
@@ -357,7 +360,7 @@ class CanMotorController():
         return positionRawValue, velocityRawValue, currentRawValue
 
     def convert_raw_to_physical_rad(self, positionRawValue, velocityRawValue, currentRawValue):
-        '''
+        """
         Function to convert the raw values from the motor to physical values:
 
         /// CAN Reply Packet Structure ///
@@ -373,38 +376,33 @@ class CanMotorController():
         /// 4: [current[7-0]]
 
         returns: position (radians), velocity (rad/s), current (amps)
-        '''
+        """
 
-        physicalPositionRad = uint_to_float(positionRawValue, self.motorParams['P_MIN'],
-                                            self.motorParams['P_MAX'], 16)
-        physicalVelocityRad = uint_to_float(velocityRawValue, self.motorParams['V_MIN'],
-                                            self.motorParams['V_MAX'], 12)
-        physicalCurrent = uint_to_float(currentRawValue, self.motorParams['T_MIN'],
-                                        self.motorParams['T_MAX'], 12)
+        physicalPositionRad = uint_to_float(positionRawValue, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16)
+        physicalVelocityRad = uint_to_float(velocityRawValue, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12)
+        physicalCurrent = uint_to_float(currentRawValue, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12)
 
         # Correct Axis Direction
-        physicalPositionRad = physicalPositionRad * self.motorParams['AXIS_DIRECTION']
-        physicalVelocityRad = physicalVelocityRad * self.motorParams['AXIS_DIRECTION']
-        physicalCurrent = physicalCurrent * self.motorParams['AXIS_DIRECTION']
+        physicalPositionRad = physicalPositionRad * self.motorParams["AXIS_DIRECTION"]
+        physicalVelocityRad = physicalVelocityRad * self.motorParams["AXIS_DIRECTION"]
+        physicalCurrent = physicalCurrent * self.motorParams["AXIS_DIRECTION"]
 
         return physicalPositionRad, physicalVelocityRad, physicalCurrent
 
     def convert_physical_rad_to_raw(self, p_des_rad, v_des_rad, kp, kd, tau_ff):
-        
+
         # Correct the Axis Direction
-        p_des_rad = p_des_rad * self.motorParams['AXIS_DIRECTION']
-        v_des_rad = v_des_rad * self.motorParams['AXIS_DIRECTION']
-        tau_ff = tau_ff * self.motorParams['AXIS_DIRECTION']
+        p_des_rad = p_des_rad * self.motorParams["AXIS_DIRECTION"]
+        v_des_rad = v_des_rad * self.motorParams["AXIS_DIRECTION"]
+        tau_ff = tau_ff * self.motorParams["AXIS_DIRECTION"]
 
-        rawPosition = float_to_uint(p_des_rad, self.motorParams['P_MIN'],
-                                    self.motorParams['P_MAX'], 16)
-        rawVelocity = float_to_uint(v_des_rad, self.motorParams['V_MIN'],
-                                    self.motorParams['V_MAX'], 12)
-        rawTorque = float_to_uint(tau_ff, self.motorParams['T_MIN'], self.motorParams['T_MAX'], 12)
+        rawPosition = float_to_uint(p_des_rad, self.motorParams["P_MIN"], self.motorParams["P_MAX"], 16)
+        rawVelocity = float_to_uint(v_des_rad, self.motorParams["V_MIN"], self.motorParams["V_MAX"], 12)
+        rawTorque = float_to_uint(tau_ff, self.motorParams["T_MIN"], self.motorParams["T_MAX"], 12)
 
-        rawKp = ((maxRawKp * kp) / self.motorParams['KP_MAX'])
+        rawKp = (maxRawKp * kp) / self.motorParams["KP_MAX"]
 
-        rawKd = ((maxRawKd * kd) / self.motorParams['KD_MAX'])
+        rawKd = (maxRawKd * kd) / self.motorParams["KD_MAX"]
 
         return int(rawPosition), int(rawVelocity), int(rawKp), int(rawKd), int(rawTorque)
 
@@ -422,8 +420,13 @@ class CanMotorController():
         self._kp_BitArray.uint = kp
         self._kd_BitArray.uint = kd
         self._tau_BitArray.uint = tau_ff
-        cmd_BitArray = self._p_des_BitArray.bin + self._v_des_BitArray.bin + self._kp_BitArray.bin \
-                        + self._kd_BitArray.bin + self._tau_BitArray.bin
+        cmd_BitArray = (
+            self._p_des_BitArray.bin
+            + self._v_des_BitArray.bin
+            + self._kp_BitArray.bin
+            + self._kd_BitArray.bin
+            + self._tau_BitArray.bin
+        )
 
         self._cmd_bytes.bin = cmd_BitArray
 
@@ -433,7 +436,7 @@ class CanMotorController():
             can_id, can_dlc, data = self._recv_can_frame()
             return data
         except Exception as e:
-            print('Error Sending Raw Commands!')
+            print("Error Sending Raw Commands!")
             print("Error: ", e)
 
     def send_deg_command(self, p_des_deg, v_des_deg, kp, kd, tau_ff):
@@ -441,7 +444,7 @@ class CanMotorController():
         Function to send data to motor in physical units:
         send_deg_command(position (deg), velocity (deg/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in deg, deg/s, amps.
-        If any input is outside limits, it is clipped. Only if torque is outside limits, a log 
+        If any input is outside limits, it is clipped. Only if torque is outside limits, a log
         message is shown.
         """
         p_des_rad = math.radians(p_des_deg)
@@ -457,42 +460,51 @@ class CanMotorController():
         Function to send data to motor in physical units:
         send_rad_command(position (rad), velocity (rad/s), kp, kd, Feedforward Torque (Nm))
         Sends data over CAN, reads response, and prints the current status in rad, rad/s, amps.
-        If any input is outside limits, it is clipped. Only if torque is outside limits, a log 
+        If any input is outside limits, it is clipped. Only if torque is outside limits, a log
         message is shown.
         """
         # Check for Torque Limits
-        if (tau_ff < self.motorParams['T_MIN']):
-            print('Torque Commanded lower than the limit. Clipping Torque...')
-            print('Commanded Torque: {}'.format(tau_ff))
-            print('Torque Limit: {}'.format(self.motorParams['T_MIN']))
-            tau_ff = self.motorParams['T_MIN']
-        elif (tau_ff > self.motorParams['T_MAX']):
-            print('Torque Commanded higher than the limit. Clipping Torque...')
-            print('Commanded Torque: {}'.format(tau_ff))
-            print('Torque Limit: {}'.format(self.motorParams['T_MAX']))
-            tau_ff = self.motorParams['T_MAX']
+        if tau_ff < self.motorParams["T_MIN"]:
+            print("Torque Commanded lower than the limit. Clipping Torque...")
+            print("Commanded Torque: {}".format(tau_ff))
+            print("Torque Limit: {}".format(self.motorParams["T_MIN"]))
+            tau_ff = self.motorParams["T_MIN"]
+        elif tau_ff > self.motorParams["T_MAX"]:
+            print("Torque Commanded higher than the limit. Clipping Torque...")
+            print("Commanded Torque: {}".format(tau_ff))
+            print("Torque Limit: {}".format(self.motorParams["T_MAX"]))
+            tau_ff = self.motorParams["T_MAX"]
 
         # Clip Position if outside Limits
-        p_des_rad = min(max(self.motorParams['P_MIN'], p_des_rad), self.motorParams['P_MAX'])
+        p_des_rad = min(max(self.motorParams["P_MIN"], p_des_rad), self.motorParams["P_MAX"])
         # Clip Velocity if outside Limits
-        v_des_rad = min(max(self.motorParams['V_MIN'], v_des_rad), self.motorParams['V_MAX'])
+        v_des_rad = min(max(self.motorParams["V_MIN"], v_des_rad), self.motorParams["V_MAX"])
         # Clip Kp if outside Limits
-        kp = min(max(self.motorParams['KP_MIN'], kp), self.motorParams['KP_MAX'])
+        kp = min(max(self.motorParams["KP_MIN"], kp), self.motorParams["KP_MAX"])
         # Clip Kd if outside Limits
-        kd = min(max(self.motorParams['KD_MIN'], kd), self.motorParams['KD_MAX'])
+        kd = min(max(self.motorParams["KD_MIN"], kd), self.motorParams["KD_MAX"])
 
-        rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad,
-                                                                v_des_rad, kp, kd, tau_ff)
+        rawPos, rawVel, rawKp, rawKd, rawTauff = self.convert_physical_rad_to_raw(p_des_rad, v_des_rad, kp, kd, tau_ff)
 
         motorStatusData = self._send_raw_command(rawPos, rawVel, rawKp, rawKd, rawTauff)
         rawMotorData = self.decode_motor_status(motorStatusData)
-        pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1],
-                                                            rawMotorData[2])
+        pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2])
 
         return pos, vel, curr
 
-    def change_motor_constants(self, P_MIN_NEW, P_MAX_NEW, V_MIN_NEW, V_MAX_NEW, KP_MIN_NEW,
-                            KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW, T_MIN_NEW, T_MAX_NEW):
+    def change_motor_constants(
+        self,
+        P_MIN_NEW,
+        P_MAX_NEW,
+        V_MIN_NEW,
+        V_MAX_NEW,
+        KP_MIN_NEW,
+        KP_MAX_NEW,
+        KD_MIN_NEW,
+        KD_MAX_NEW,
+        T_MIN_NEW,
+        T_MAX_NEW,
+    ):
         """
         Function to change the global motor constants. Default values are for AK80-6 motor from
         CubeMars. For a different motor, the min/max values can be changed here for correct
@@ -501,13 +513,13 @@ class CanMotorController():
                             V_MAX_NEW (rad/s), KP_MIN_NEW, KP_MAX_NEW, KD_MIN_NEW, KD_MAX_NEW,
                             T_MIN_NEW (Nm), T_MAX_NEW (Nm))
         """
-        self.motorParams['P_MIN'] = P_MIN_NEW
-        self.motorParams['P_MAX'] = P_MAX_NEW
-        self.motorParams['V_MIN'] = V_MIN_NEW
-        self.motorParams['V_MAX'] = V_MAX_NEW
-        self.motorParams['KP_MIN'] = KP_MIN_NEW
-        self.motorParams['KP_MAX'] = KP_MAX_NEW
-        self.motorParams['KD_MIN'] = KD_MIN_NEW
-        self.motorParams['KD_MAX'] = KD_MAX_NEW
-        self.motorParams['T_MIN'] = T_MIN_NEW
-        self.motorParams['T_MAX'] = T_MAX_NEW
+        self.motorParams["P_MIN"] = P_MIN_NEW
+        self.motorParams["P_MAX"] = P_MAX_NEW
+        self.motorParams["V_MIN"] = V_MIN_NEW
+        self.motorParams["V_MAX"] = V_MAX_NEW
+        self.motorParams["KP_MIN"] = KP_MIN_NEW
+        self.motorParams["KP_MAX"] = KP_MAX_NEW
+        self.motorParams["KD_MIN"] = KD_MIN_NEW
+        self.motorParams["KD_MAX"] = KD_MAX_NEW
+        self.motorParams["T_MIN"] = T_MIN_NEW
+        self.motorParams["T_MAX"] = T_MAX_NEW
