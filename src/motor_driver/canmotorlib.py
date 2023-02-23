@@ -61,8 +61,8 @@ AK80_6_V1p1_PARAMS = {
 AK80_6_V2_PARAMS = {
                 "P_MIN" : -12.5,
                 "P_MAX" : 12.5,
-                "V_MIN" : -38.2,
-                "V_MAX" : 38.2,
+                "V_MIN" : -76.0,
+                "V_MAX" : 76.0,
                 "KP_MIN" : 0.0,
                 "KP_MAX" : 500.0,
                 "KD_MIN" : 0.0,
@@ -140,6 +140,7 @@ maxRawKp = 2**12 - 1                            # 12-Bits for Raw Kp Values
 maxRawKd = 2**12 - 1                            # 12-Bits for Raw Kd Values
 maxRawCurrent = 2**12 - 1                       # 12-Bits for Raw Current Values
 dt_sleep = 0.0001                               # Time before motor sends a reply
+set_zero_sleep = 1.5                            # Time to wait after setting zero. Motor takes extra time to set zero.
 
 
 def float_to_uint(x, x_min, x_max, numBits):
@@ -309,7 +310,7 @@ class CanMotorController:
         """
         try:
             self._send_can_frame(b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE")
-            waitOhneSleep(dt_sleep)
+            waitOhneSleep(set_zero_sleep)
             can_id, can_dlc, motorStatusData = self._recv_can_frame()
             rawMotorData = self.decode_motor_status(motorStatusData)
             pos, vel, curr = self.convert_raw_to_physical_rad(rawMotorData[0], rawMotorData[1], rawMotorData[2])
