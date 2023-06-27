@@ -213,6 +213,7 @@ class CanMotorController:
         # create a raw socket and bind it to the given CAN interface
         try:
             self.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+            self.motor_socket.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_LOOPBACK, 0)
             self.motor_socket.bind(can_socket)
             self.motor_socket.settimeout(socket_timeout)
             print("Bound to: ", can_socket)
