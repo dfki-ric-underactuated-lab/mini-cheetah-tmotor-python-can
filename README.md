@@ -19,7 +19,7 @@ Install via:
 
 # Documentation
 
-- Useful videos: 
+- Useful videos:
     - [From T-Motor](https://www.youtube.com/watch?v=hbqQCgebaF8)
     - [From Skyentific](https://www.youtube.com/watch?v=HzY9vzgPZkA)
 - [Motor Datasheets](https://store.cubemars.com/images/file/20220307/1646619452473352.pdf)
@@ -177,6 +177,6 @@ To add a new constants configuration use the `change_motor_constants` function o
 
 # Known Issues
 
-**Issue Fixed**: When having 2 motors on the CAN bus with either PCAN CAN-USB or ESD CAN-USB/2, sometimes the motors experience an initial short *kick/impulse* at when they are enabled again after being disabled. This was fixed.
+Currently, the driver does not support multiple CAN busses i.e. multiple CAN2USB devices. The fix for this is in the works...
 
 As this is experimental software, there might be other unknown issues.

@@ -179,6 +179,8 @@ class CanMotorController:
     Class for creating a Mini-Cheetah Motor Controller over CAN. Uses SocketCAN driver for
     communication.
     """
+    can_socket_declared = False
+    motor_socket = None
 
     def __init__(self, can_socket="can0", motor_id=0x01, motor_type="AK80_6_V1p1", socket_timeout=0.05):
         """
@@ -210,16 +212,20 @@ class CanMotorController:
 
         can_socket = (can_socket,)
         self.motor_id = motor_id
-        # create a raw socket and bind it to the given CAN interface
-        try:
-            self.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
-            self.motor_socket.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_LOOPBACK, 0)
-            self.motor_socket.bind(can_socket)
-            self.motor_socket.settimeout(socket_timeout)
-            print("Bound to: ", can_socket)
-        except Exception as e:
-            print("Unable to Connect to Socket Specified: ", can_socket)
-            print("Error:", e)
+        if not CanMotorController.can_socket_declared:
+            # create a raw socket and bind it to the given CAN interface
+            try:
+                CanMotorController.motor_socket = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+                CanMotorController.motor_socket.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_LOOPBACK, 0)
+                CanMotorController.motor_socket.bind(can_socket)
+                CanMotorController.motor_socket.settimeout(socket_timeout)
+                print("Bound to: ", can_socket)
+                CanMotorController.can_socket_declared = True
+            except Exception as e:
+                print("Unable to Connect to Socket Specified: ", can_socket)
+                print("Error:", e)
+        elif CanMotorController.can_socket_declared:
+            print("Socket already available. Using:  ", CanMotorController.motor_socket)
 
         # Initialize the command BitArrays for performance optimization
         self._p_des_BitArray = BitArray(
@@ -241,7 +247,7 @@ class CanMotorController:
         can_dlc = len(data)
         can_msg = struct.pack(can_frame_fmt_send, self.motor_id, can_dlc, data)
         try:
-            self.motor_socket.send(can_msg)
+            CanMotorController.motor_socket.send(can_msg)
         except Exception as e:
             print("Unable to Send CAN Frame.")
             print("Error: ", e)
@@ -252,7 +258,7 @@ class CanMotorController:
         """
         try:
             # The motor sends back only 6 bytes.
-            frame, addr = self.motor_socket.recvfrom(recvBytes)
+            frame, addr = CanMotorController.motor_socket.recvfrom(recvBytes)
             can_id, can_dlc, data = struct.unpack(can_frame_fmt_recv, frame)
             return can_id, can_dlc, data[:can_dlc]
         except Exception as e:
